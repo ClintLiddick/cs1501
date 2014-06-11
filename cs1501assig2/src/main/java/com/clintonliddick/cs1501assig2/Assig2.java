@@ -28,9 +28,9 @@ public class Assig2 {
     setFilesFromArgs(args);
     fillDictionaries();
     
-    computeFileTime();
+    fileTime = computeFileTime();
     System.out.println(fileTime);
-    computeFileTime(); // doubled to account for system file caching
+    fileTime = computeFileTime(); // doubled to account for system file caching
     System.out.println(fileTime);
     
     computeDictionaryTimes();
@@ -67,9 +67,7 @@ public class Assig2 {
     }
   }
   
-  void computeFileTime() {
-    fileTime = Timer.getSecondsToComplete(new CheckDictionary(-1));
-  }
+
   
   // NOTE:
   // there is a connection between order of operations and runtime
@@ -79,13 +77,22 @@ public class Assig2 {
   void computeDictionaryTimes() {
     int d;
     for (d=0; d < dictionaries.length; d++) {
-      double rawTime = Timer.getSecondsToComplete(new CheckDictionary(d));
+      double fileTime = computeFileTime();
+      double rawTime = computeDictionaryTime(d);
       System.out.println(rawTime + " - " + fileTime);
       if (rawTime < fileTime)
-        dictionaryTimes[d] = rawTime;
+        dictionaryTimes[d] = 0;
       else
         dictionaryTimes[d] =  rawTime - fileTime;
     }
+  }
+  
+  double computeFileTime() {
+	    return computeDictionaryTime(-1);
+	  }
+  
+  double computeDictionaryTime(int d) {
+	  return Timer.getSecondsToComplete(new CheckDictionary(d));
   }
   
   void printResultsToFile() {
@@ -94,17 +101,17 @@ public class Assig2 {
       PrintWriter pw = new PrintWriter(fw);
       pw.println("Dictionaries " + dictionaryFile.toString() + " read in");
       pw.println("Test File: " + document.toString() + "\n");
-  
-        pw.println("Dictionary 0 (unsorted array)");
-        printSingleResultToFile(pw, 0);
-        pw.println("Dictionary 1 (sorted array)");
-        printSingleResultToFile(pw, 1);
-        pw.println("Dictionary 2 (hash table)");
-        printSingleResultToFile(pw,2);
+      
+      pw.println("Dictionary 0 (unsorted array)");
+      printSingleResultToFile(pw, 0);
+      pw.println("Dictionary 1 (sorted array)");
+      printSingleResultToFile(pw, 1);
+      pw.println("Dictionary 2 (hash table)");
+      printSingleResultToFile(pw,2);
 
       pw.close();
     } catch (IOException ex) {
-      printResultsToStdout(); // TODO remove
+      printResultsToStdout();
     }
   }
   
@@ -112,11 +119,10 @@ public class Assig2 {
     pw.println("\tTotal words check: " + searches[dictIndex]);
     pw.println("\tNumber of words found: " + wordsCorrect[dictIndex]);
     pw.println("\tNumber of words not found: " + (searches[dictIndex] - wordsCorrect[dictIndex]));
-    pw.println("\tTotal time required: " + dictionaryTimes[dictIndex]);
-    pw.println("\tAverage time required: " + dictionaryTimes[dictIndex]/searches[dictIndex] + "\n");
+    pw.format("\tTotal time required: %5g%n", dictionaryTimes[dictIndex]);
+    pw.format("\tAverage time required: %5g%n", dictionaryTimes[dictIndex]/searches[dictIndex]);
   }
   
-  // TODO remove
   void printResultsToStdout() {
     for (int i=0; i<dictionaries.length; i++) {
       System.out.println("Dictionary " + (i+1));
@@ -152,14 +158,9 @@ public class Assig2 {
         br = new BufferedReader(new FileReader(document));
         String str;
  
-//lineloop:
       while ((str = br.readLine()) != null) {
           String[] tokens = str.split(TOKEN_REGEX);
           for (int t=0; t<tokens.length; t++) {
-            
-//            if ( str.isEmpty() || str.charAt(0) == '\n' || str.charAt(0) == '\t' || str.charAt(0) == ' ') {
-//              continue lineloop;
-//            }
               
             if (dictIndex == -1)
               continue; // dummy for fileTime calculation
