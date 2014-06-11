@@ -1,0 +1,35 @@
+Dictionaries words1.txt read in
+Test File: large.txt
+Dictionary 0 (unsorted array)
+        Number found 165739
+        Not found 45507
+Dictionary 1 (sorted array)
+        Number found 165739
+        Not found 45507
+Dictionary 2 (hash table)
+        Number found 165739
+        Not found 45507
+
+Dictionaries words2.txt read in
+Test File: large.txt
+Dictionary 0 (unsorted array)
+        Number found 192839
+        Not found 18407
+Dictionary 1 (sorted array)
+        Number found 192839
+        Not found 18407
+Dictionary 2 (hash table)
+        Number found 192839
+        Not found 18407
+
+Dictionaries words3.txt read in
+Test File: large.txt
+Dictionary 0 (unsorted array)
+        Number found 200258
+        Not found 10988
+Dictionary 1 (sorted array)
+        Number found 200258
+        Not found 10988
+Dictionary 2 (hash table)
+        Number found 200258
+        Not found 10988
