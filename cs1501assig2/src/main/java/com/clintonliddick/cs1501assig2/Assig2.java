@@ -28,10 +28,7 @@ public class Assig2 {
     setFilesFromArgs(args);
     fillDictionaries();
     
-    fileTime = computeFileTime();
-    System.out.println(fileTime);
-    fileTime = computeFileTime(); // doubled to account for system file caching
-    System.out.println(fileTime);
+    computeFileTime(); // dummy run to potentially cache file
     
     computeDictionaryTimes();
     printResultsToFile();
@@ -79,7 +76,6 @@ public class Assig2 {
     for (d=0; d < dictionaries.length; d++) {
       double fileTime = computeFileTime();
       double rawTime = computeDictionaryTime(d);
-      System.out.println(rawTime + " - " + fileTime);
       if (rawTime < fileTime)
         dictionaryTimes[d] = 0;
       else
