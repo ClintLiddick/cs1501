@@ -22,19 +22,16 @@ public class LZWmodTest {
     File compressedFile = new File("/Users/Clint/projects/datafiles/compressed.lzw");
     File copyFile = new File("/Users/Clint/projects/datafiles/medium.exp.txt");
     try {
-      PrintStream fileOutStream = setStdIOToFiles(fileToCompress,compressedFile);
-      LZWmod.compress();
-      fileOutStream.close();
-      fileOutStream = setStdIOToFiles(compressedFile, copyFile);
-      LZWmod.expand();
-      fileOutStream.close();
+      LZWmod.compress(fileToCompress, compressedFile);
+      LZWmod.expand(compressedFile,copyFile);
+      assertNotEquals("zero compression",fileToCompress.length(), compressedFile.length());
       assertEquals("not same filesize",fileToCompress.length(),copyFile.length());
     
     } catch (Exception e) {
       fail("exception while trying to (de)compress file: " + e.getMessage());
     } finally {
       cleanUpFile(compressedFile);
-      cleanUpFile(copyFile);
+      //cleanUpFile(copyFile);
     }
   }
 
@@ -52,14 +49,14 @@ public class LZWmodTest {
 //    fileOutStream.close();
 //  }
   
-  protected static PrintStream setStdIOToFiles(File inFile, File outFile) 
-      throws FileNotFoundException {
-    FileInputStream fileInStream = new FileInputStream(inFile);
-    PrintStream fileOutStream = new PrintStream(new FileOutputStream(outFile));
-    System.setIn(fileInStream);
-    System.setOut(fileOutStream);
-    return fileOutStream;
-  }
+//  protected static PrintStream setStdIOToFiles(File inFile, File outFile) 
+//      throws FileNotFoundException {
+//    FileInputStream fileInStream = new FileInputStream(inFile);
+//    PrintStream fileOutStream = new PrintStream(new FileOutputStream(outFile));
+//    System.setIn(fileInStream);
+//    System.setOut(fileOutStream);
+//    return fileOutStream;
+//  }
   
   protected static void cleanUpFile(File file) {
     try {

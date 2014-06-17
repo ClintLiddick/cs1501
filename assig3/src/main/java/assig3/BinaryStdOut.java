@@ -13,6 +13,7 @@ package assig3;
 
 import java.io.IOException;
 import java.io.BufferedOutputStream;
+import java.io.PrintStream;
 
 /**
  *  <i>Binary standard output</i>. This class provides methods for converting
@@ -28,18 +29,19 @@ import java.io.BufferedOutputStream;
  *  will result.
  */
 public final class BinaryStdOut {
-    private static BufferedOutputStream out = new BufferedOutputStream(System.out);
+    private final BufferedOutputStream out;
 
-    private static int buffer;     // 8-bit buffer of bits to write out
-    private static int N;          // number of bits remaining in buffer
+    private int buffer;     // 8-bit buffer of bits to write out
+    private int N;          // number of bits remaining in buffer
 
-    // singleton pattern - can't instantiate
-    private BinaryStdOut() { }
+    public BinaryStdOut(PrintStream outputStream) {
+      out = new BufferedOutputStream(outputStream);
+    }
 
    /**
      * Write the specified bit to standard output.
      */
-    private static void writeBit(boolean bit) {
+    private void writeBit(boolean bit) {
         // add bit to buffer
         buffer <<= 1;
         if (bit) buffer |= 1;
@@ -52,7 +54,7 @@ public final class BinaryStdOut {
    /**
      * Write the 8-bit byte to standard output.
      */
-    private static void writeByte(int x) {
+    private void writeByte(int x) {
         assert x >= 0 && x < 256;
 
         // optimized if byte-aligned
@@ -70,7 +72,7 @@ public final class BinaryStdOut {
     }
 
     // write out any remaining bits in buffer to standard output, padding with 0s
-    private static void clearBuffer() {
+    private void clearBuffer() {
         if (N == 0) return;
         if (N > 0) buffer <<= (8 - N);
         try { out.write(buffer); }
@@ -83,7 +85,7 @@ public final class BinaryStdOut {
      * Flush standard output, padding 0s if number of bits written so far
      * is not a multiple of 8.
      */
-    public static void flush() {
+    public void flush() {
         clearBuffer();
         try { out.flush(); }
         catch (IOException e) { e.printStackTrace(); }
@@ -93,7 +95,7 @@ public final class BinaryStdOut {
      * Flush and close standard output. Once standard output is closed, you can no
      * longer write bits to it.
      */
-    public static void close() {
+    public void close() {
         flush();
         try { out.close(); }
         catch (IOException e) { e.printStackTrace(); }
@@ -104,7 +106,7 @@ public final class BinaryStdOut {
      * Write the specified bit to standard output.
      * @param x the <tt>boolean</tt> to write.
      */
-    public static void write(boolean x) {
+    public void write(boolean x) {
         writeBit(x);
     } 
 
@@ -112,7 +114,7 @@ public final class BinaryStdOut {
      * Write the 8-bit byte to standard output.
      * @param x the <tt>byte</tt> to write.
      */
-    public static void write(byte x) {
+    public void write(byte x) {
         writeByte(x & 0xff);
     }
 
@@ -120,7 +122,7 @@ public final class BinaryStdOut {
      * Write the 32-bit int to standard output.
      * @param x the <tt>int</tt> to write.
      */
-    public static void write(int x) {
+    public void write(int x) {
         writeByte((x >>> 24) & 0xff);
         writeByte((x >>> 16) & 0xff);
         writeByte((x >>>  8) & 0xff);
@@ -134,7 +136,7 @@ public final class BinaryStdOut {
      * @throws RuntimeException if <tt>r</tt> is not between 1 and 32.
      * @throws RuntimeException if <tt>x</tt> is not between 0 and 2<sup>r</sup> - 1.
      */
-    public static void write(int x, int r) {
+    public void write(int x, int r) {
         if (r == 32) write(x);
         if (r < 1 || r > 32)        throw new RuntimeException("Illegal value for r = " + r);
         if (x < 0 || x >= (1 << r)) throw new RuntimeException("Illegal " + r + "-bit char = " + x);
@@ -152,7 +154,7 @@ public final class BinaryStdOut {
      * Write the 64-bit double to standard output.
      * @param x the <tt>double</tt> to write.
      */
-    public static void write(double x) {
+    public void write(double x) {
         write(Double.doubleToRawLongBits(x));
     }
 
@@ -160,7 +162,7 @@ public final class BinaryStdOut {
      * Write the 64-bit long to standard output.
      * @param x the <tt>long</tt> to write.
      */
-    public static void write(long x) {
+    public void write(long x) {
         writeByte((int) ((x >>> 56) & 0xff));
         writeByte((int) ((x >>> 48) & 0xff));
         writeByte((int) ((x >>> 40) & 0xff));
@@ -175,7 +177,7 @@ public final class BinaryStdOut {
      * Write the 32-bit float to standard output.
      * @param x the <tt>float</tt> to write.
      */
-    public static void write(float x) {
+    public void write(float x) {
         write(Float.floatToRawIntBits(x));
     }
 
@@ -183,7 +185,7 @@ public final class BinaryStdOut {
      * Write the 16-bit int to standard output.
      * @param x the <tt>short</tt> to write.
      */
-    public static void write(short x) {
+    public void write(short x) {
         writeByte((x >>>  8) & 0xff);
         writeByte((x >>>  0) & 0xff);
     }
@@ -193,7 +195,7 @@ public final class BinaryStdOut {
      * @param x the <tt>char</tt> to write.
      * @throws RuntimeException if <tt>x</tt> is not betwen 0 and 255.
      */
-    public static void write(char x) {
+    public void write(char x) {
         if (x < 0 || x >= 256) throw new RuntimeException("Illegal 8-bit char = " + x);
         writeByte(x);
     }
@@ -205,7 +207,7 @@ public final class BinaryStdOut {
      * @throws RuntimeException if <tt>r</tt> is not between 1 and 16.
      * @throws RuntimeException if <tt>x</tt> is not between 0 and 2<sup>r</sup> - 1.
      */
-    public static void write(char x, int r) {
+    public void write(char x, int r) {
         if (r == 8) write(x);
         if (r < 1 || r > 16)        throw new RuntimeException("Illegal value for r = " + r);
         if (x < 0 || x >= (1 << r)) throw new RuntimeException("Illegal " + r + "-bit char = " + x);
@@ -221,7 +223,7 @@ public final class BinaryStdOut {
      * @throws RuntimeException if any character in the string is not
      * between 0 and 255.
      */
-    public static void write(String s) {
+    public void write(String s) {
         for (int i = 0; i < s.length(); i++)
             write(s.charAt(i));
     }
@@ -234,7 +236,7 @@ public final class BinaryStdOut {
      * @throws RuntimeException if any character in the string is not
      * between 0 and 2<sup>r</sup> - 1.
      */
-    public static void write(String s, int r) {
+    public void write(String s, int r) {
         for (int i = 0; i < s.length(); i++)
             write(s.charAt(i), r);
     }
@@ -242,13 +244,14 @@ public final class BinaryStdOut {
    /**
      * Test client.
      */
-    public static void main(String[] args) {
+    /*
+    public void main(String[] args) {
         int N = Integer.parseInt(args[0]);
         // write to standard output
         for (int i = 0; i < N; i++) {
-            BinaryStdOut.write(i);
+            write(i);
         }
-        BinaryStdOut.flush();
-    }
+        flush();
+    }*/
 
 }
