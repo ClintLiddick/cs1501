@@ -37,25 +37,26 @@ public class LZWmodTest {
   @Parameters
   public static Collection<ResetCodewords[]> resetMehtodParams() {
 //    return Arrays.asList(ResetCodewords.values());
-    return Arrays.asList(new ResetCodewords[][] {{ResetCodewords.NONE},{ResetCodewords.RESET}});
+    return Arrays.asList(new ResetCodewords[][] {/*{ResetCodewords.NONE},
+        {ResetCodewords.RESET}, */{ResetCodewords.MONITOR}});
   }
   
   @Before
   public void createCompressedAndDecompressedCopy() throws Exception {
-    fileToCompress = new File("/Users/Clint/projects/assig3data/medium.txt");
+    fileToCompress = new File("/Users/Clint/projects/assig3data/texts.tar");
     compressedFile = new File("/Users/Clint/projects/datafiles/compressed.lzw");
-    copyFile = new File("/Users/Clint/projects/datafiles/mediumCopy.txt");
+    copyFile = new File("/Users/Clint/projects/datafiles/t.tar");
     
     try {
       LZWmod.compress(fileToCompress, compressedFile,resetMethod);
-      LZWmod.expand(compressedFile,copyFile,resetMethod);
+      LZWmod.expand(compressedFile,copyFile);
     } catch (Exception e) {
       throw e;
     }
   }
 
   @Test
-  public void originalAndDecompressedCopySameSize() { // TODO add parameter
+  public void originalAndDecompressedCopySameSize() {
       assertNotEquals("zero compression",fileToCompress.length(), compressedFile.length());
       assertEquals("not same filesize",fileToCompress.length(),copyFile.length());
   }
@@ -95,9 +96,7 @@ public class LZWmodTest {
   protected static void cleanUpFile(File file) {
     try {
       Files.deleteIfExists(file.toPath());
-    } catch (IOException e) {
-      // TODO
-    }
+    } catch (IOException e) {  }
   }
 
 }
