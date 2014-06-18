@@ -14,15 +14,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LZWmod {
-  final Logger logger = LoggerFactory.getLogger(LZWmod.class);
+  final static Logger log = LoggerFactory.getLogger(LZWmod.class);
 
   private static final int R = 256;        // number of input chars
   private static final int L = 4096;       // number of codewords = 2^W
@@ -32,6 +30,7 @@ public class LZWmod {
     try {
       BinaryStdIn binaryIn = new BinaryStdIn(new FileInputStream(inFile));
       BinaryStdOut binaryOut = new BinaryStdOut(new PrintStream(new FileOutputStream(outFile)));
+      
       String input = binaryIn.readString();
       TST<Integer> st = new TST<Integer>();
       for (int i = 0; i < R; i++)
@@ -49,7 +48,7 @@ public class LZWmod {
       binaryOut.write(R, W);
       binaryOut.close();
     } catch (FileNotFoundException ex) {
-      System.err.println(ex.getMessage());
+      log.error(ex.getMessage());
     }
   } 
 
