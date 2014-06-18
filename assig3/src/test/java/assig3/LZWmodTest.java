@@ -5,48 +5,54 @@ import static org.junit.Assert.*;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Collection;
 
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
+import assig3.LZWmod.ResetCodewords;
+
+@RunWith(Parameterized.class)
 public class LZWmodTest {
   
-  private static File fileToCompress;
-  private static File compressedFile;
-  private static File copyFile;
+  private ResetCodewords resetMethod;
+  private File fileToCompress;
+  private File compressedFile;
+  private File copyFile;
 
+  public LZWmodTest(ResetCodewords rm) {
+    this.resetMethod = rm;
+  }
   
-  @BeforeClass
-  public static void createCompressedAndDecompressedCopy() throws Exception {
+  @Parameters
+  public static Collection<ResetCodewords[]> resetMehtodParams() {
+//    return Arrays.asList(ResetCodewords.values());
+    return Arrays.asList(new ResetCodewords[][] {{ResetCodewords.NONE},{ResetCodewords.RESET}});
+  }
+  
+  @Before
+  public void createCompressedAndDecompressedCopy() throws Exception {
     fileToCompress = new File("/Users/Clint/projects/assig3data/medium.txt");
     compressedFile = new File("/Users/Clint/projects/datafiles/compressed.lzw");
-    copyFile = new File("/Users/Clint/projects/datafiles/medium.exp.txt");
+    copyFile = new File("/Users/Clint/projects/datafiles/mediumCopy.txt");
     
     try {
-      LZWmod.compress(fileToCompress, compressedFile);
-      LZWmod.expand(compressedFile,copyFile);
+      LZWmod.compress(fileToCompress, compressedFile,resetMethod);
+      LZWmod.expand(compressedFile,copyFile,resetMethod);
     } catch (Exception e) {
-      e.printStackTrace();
       throw e;
     }
   }
-  
-  @Test
-  public void testCompress() {
-    fail("unimplemented");
-  }
-  
-  @Test
-  public void testExpand() {
-    fail("unimplemented");
-  }
-  
-  
 
   @Test
   public void originalAndDecompressedCopySameSize() { // TODO add parameter
@@ -69,6 +75,7 @@ public class LZWmodTest {
         assertEquals("data inconsistency with copy",orig,copy);
       } while (orig != -1);
     } catch (Exception ex) {
+//      ex.printStackTrace();
       throw ex;
     } finally {
       try {
@@ -78,8 +85,8 @@ public class LZWmodTest {
     }
   }
   
-  @AfterClass
-  public static void cleanUpFileCopies() {
+  @After
+  public void cleanUpFileCopies() {
     cleanUpFile(compressedFile);
     cleanUpFile(copyFile);
   }
