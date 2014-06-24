@@ -22,7 +22,8 @@ import org.slf4j.LoggerFactory;
 public class LZWmod {
   final static Logger log = LoggerFactory.getLogger(LZWmod.class);
 
-  private static final int R = 256;        // number of input chars
+  private static final int EOF = 256;        // number of input chars
+  private static final int CLEAR = 257;
 //  private static final int L = 4096;       // number of codewords = 2^W
   //private static final int W = 12;         // codeword width
   private static final double COMPRESSION_RATIO_THRESHOLD = 1.1;
@@ -56,52 +57,51 @@ public class LZWmod {
         binaryOut.write(2,2);
       }
       
+      
+      
       String input = binaryIn.readString();
       TST<Integer> st = new TST<Integer>();
-      for (int i = 0; i < R; i++)
+      for (int i = 0; i < EOF; i++)
         st.put("" + (char) i, i);
-      int code = R+1;  // R is codeword for EOF
+      int code = CLEAR+1;
 
       while (input.length() > 0) {
-        String longestEncoding = st.longestPrefixOf(input);  // Find max prefix match s.
-        binaryOut.write(st.get(longestEncoding), W);      // Print s's encoding.
+        String longestPrefix = st.longestPrefixOf(input);  // Find max prefix match s.
+        binaryOut.write(st.get(longestPrefix), W);      // Print s's encoding.
         bitsCompressed += W;
-        int t = longestEncoding.length();
+        int t = longestPrefix.length();
         
         bitsUncompressed += t * 8; // TODO verify, java treats char as unicode 16 bit
         if (!monitoring)
           originalCompressionRatio = (double) bitsUncompressed / bitsCompressed;
-        if (monitoring) {
+        else {
           currentCompressionRation = (double) bitsUncompressed / bitsCompressed;
           ratioOfRatios = originalCompressionRatio/currentCompressionRation;
           //log.debug("Compress -- codewords: " + code +" compression ratio ratio: " + ratioOfRatios);
         }
-        log.debug("COMPRESS code: "+code+" st: " + st + " t: " + t + " s: " + longestEncoding);
+        log.debug("COMPRESS code: "+code+" st: " + st + " t: " + t + " s: " + longestPrefix);
 
         if (code < L) {
           if (t < input.length())    // Add s to symbol table.
             st.put(input.substring(0, t + 1), code++);
         } else {
           switch (reset) {
-          case RESET:
-            log.debug("Compress -- resetting dict");
-            st = new TST<Integer>();
-            for (int i = 0; i < R; i++)
-              st.put("" + (char) i, i);
-            code = R+1;  // R is codeword for EOF
-//            st.put(input.substring(0, t + 1), code++);
-            break;
           case MONITOR:
             monitoring = true;
-            if (ratioOfRatios >= COMPRESSION_RATIO_THRESHOLD) {
+            if (ratioOfRatios < COMPRESSION_RATIO_THRESHOLD) {
+              break; // do not reset
+            } else {
+              monitoring = false;
               log.debug("compression ratio threshold exceeded");
-              log.debug("Compress -- resetting dict");
-              st = new TST<Integer>();
-              for (int i = 0; i < R; i++)
-                st.put("" + (char) i, i);
-              code = R+1;  // R is codeword for EOF
-//              st.put(input.substring(0, t + 1), code++);
             }
+            // FALLTHROUGH
+          case RESET:
+            log.debug("Compress -- resetting table");
+            st = new TST<Integer>();
+            for (int i = 0; i < EOF; i++)
+              st.put("" + (char) i, i);
+            code = CLEAR+1;
+            binaryOut.write(CLEAR,W);
             break;
           case NONE:
             break;
@@ -110,7 +110,7 @@ public class LZWmod {
         }
         input = input.substring(t);            // Scan past s in input.
       }
-      binaryOut.write(R, W);
+      binaryOut.write(EOF, W);
       binaryOut.close();
     } catch (FileNotFoundException ex) {
       log.error(ex.getMessage());
@@ -125,38 +125,13 @@ public class LZWmod {
     try {
       BinaryStdIn binaryIn = new BinaryStdIn(new FileInputStream(inFile));
       BinaryStdOut binaryOut = new BinaryStdOut(new PrintStream(new FileOutputStream(outFile)));
-      
-      int bitsUncompressed = 0;
-      int bitsCompressed = 0;
-      double originalCompressionRatio = 1;
-      double currentCompressionRation = 1;
-      double ratioOfRatios = 1;
-      boolean monitoring = false;
+
       ResetCodewords reset = ResetCodewords.NONE;
       
       int resetFlag = binaryIn.readInt(2);
       log.debug("Expand reset flag: " + resetFlag);
-      switch(resetFlag) {
-      case 0:
-        reset = ResetCodewords.NONE;
-        log.info("Expand reset method: NONE");
-        break;
-      case 1:
+      if (resetFlag != 0) {
         reset = ResetCodewords.RESET;
-        log.info("Expand reset method: RESET");
-        break;
-      case 2:
-        reset = ResetCodewords.MONITOR;
-        log.info("Expand reset method: MONITOR");
-        break;
-      default:
-        // invalid data read in (probably from old version of LZW compress
-        // so reset input stream to reread valid compression bits using no reset method
-        log.warn("Expand reset method: UNKNOWN -- resetting input stream");
-        binaryIn.close();
-        binaryIn = new BinaryStdIn(new FileInputStream(inFile));
-        reset = ResetCodewords.NONE;
-        break;
       }
       
 
@@ -164,74 +139,51 @@ public class LZWmod {
       int freeCWIndex; // next available codeword value
 
       // initialize symbol table with all 1-character strings
-      for (freeCWIndex = 0; freeCWIndex < R; freeCWIndex++)
+      for (freeCWIndex = 0; freeCWIndex < EOF; freeCWIndex++)
         st[freeCWIndex] = "" + (char) freeCWIndex;
       
       st[freeCWIndex++] = "";                        // (unused) lookahead for EOF
+      st[freeCWIndex++] = "";   // unused, codeword for CLEAR
 
+      
       int compressedCode = binaryIn.readInt(W);
-      bitsCompressed += W;
-
       String expandedVal = st[compressedCode];
-
       while (true) {
         binaryOut.write(expandedVal);
-        bitsUncompressed += expandedVal.length() * 8; // TODO verify, java treats char as unicode 16 bit
+
         compressedCode = binaryIn.readInt(W);
-        bitsCompressed += W;
         
-        if (!monitoring)
-          originalCompressionRatio = (double) bitsUncompressed / bitsCompressed;
-        else {
-          currentCompressionRation = (double) bitsUncompressed / bitsCompressed;
-          ratioOfRatios = originalCompressionRatio/currentCompressionRation;
-          //log.debug("Expand -- codewords: " + code +" compression ratio ratio: " + ratioOfRatios);
+        if (compressedCode == EOF) // EOF flag
+          break;        
+        // reset if hit flag
+        if (compressedCode == CLEAR && reset != ResetCodewords.NONE) {
+          log.info("reset flag encoutered. resetting table");
+          st = new String[L];
+          for (freeCWIndex = 0; freeCWIndex < EOF; freeCWIndex++)
+            st[freeCWIndex] = "" + (char) freeCWIndex;
+          
+          st[freeCWIndex++] = "";   // (unused) lookahead for EOF
+          st[freeCWIndex++] = "";   // unused, codeword for CLEAR
+          
+          compressedCode = binaryIn.readInt(W);
         }
 
-        if (compressedCode == R) // EOF flag
-          break;
-        
         String newCodeword = st[compressedCode];
         if (freeCWIndex == compressedCode) 
           newCodeword = expandedVal + expandedVal.charAt(0);   // special case hack
         
-        log.debug("EXPAND compressedCode: " + compressedCode + " newCodeword: " + newCodeword +" st: " + st +
+        log.debug("EXPAND compressedCode: " + compressedCode +
             " expandedVal: " + expandedVal);
 
         if (freeCWIndex < L) {
           st[freeCWIndex++] = expandedVal + newCodeword.charAt(0);
-        } else {
-          switch (reset) {
-          case RESET:
-            log.debug("Expand -- resetting dict");
-            st = new String[L];
-            for (freeCWIndex = 0; freeCWIndex < R; freeCWIndex++)
-              st[freeCWIndex] = "" + (char) freeCWIndex;
-            // code = 256
-            st[freeCWIndex++] = "";                        // (unused) lookahead for EOF
-//            st[freeCWIndex++] = expandedVal + newCodeword.charAt(0);
-            break;
-          case MONITOR:
-            monitoring = true;
-            if (ratioOfRatios >= COMPRESSION_RATIO_THRESHOLD) {
-              log.debug("compression ratio threshold exceeded");
-              log.debug("Expand -- resetting dict");
-              st = new String[L];
-              for (freeCWIndex = 0; freeCWIndex < R; freeCWIndex++)
-                st[freeCWIndex] = "" + (char) freeCWIndex;
-              st[freeCWIndex++] = "";                        // (unused) lookahead for EOF
-//              st[freeCWIndex++] = expandedVal + newCodeword.charAt(0);
-            }
-            break;
-          case NONE:
-            break;
-          }
         }
+        
         expandedVal = newCodeword;
       }
       binaryOut.close();
     } catch (FileNotFoundException ex) {
-      System.err.println(ex.getMessage());
+      log.error(ex.getMessage());
     }
   }
 
