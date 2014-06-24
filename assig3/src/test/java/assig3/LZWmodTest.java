@@ -37,18 +37,21 @@ public class LZWmodTest {
   @Parameters
   public static Collection<ResetCodewords[]> resetMehtodParams() {
 //    return Arrays.asList(ResetCodewords.values());
-    return Arrays.asList(new ResetCodewords[][] {/*{ResetCodewords.NONE},
-        {ResetCodewords.RESET}, */{ResetCodewords.MONITOR}});
+    return Arrays.asList(new ResetCodewords[][] {
+        {ResetCodewords.NONE},
+        {ResetCodewords.RESET}, 
+        {ResetCodewords.MONITOR}
+        });
   }
   
   @Before
   public void createCompressedAndDecompressedCopy() throws Exception {
-    fileToCompress = new File("/Users/Clint/projects/assig3data/texts.tar");
+    fileToCompress = new File("/Users/Clint/projects/assig3data/wacky.bmp");
     compressedFile = new File("/Users/Clint/projects/datafiles/compressed.lzw");
-    copyFile = new File("/Users/Clint/projects/datafiles/t.tar");
+    copyFile = new File("/Users/Clint/projects/datafiles/wackyCopy.bmp");
     
     try {
-      LZWmod.compress(fileToCompress, compressedFile,resetMethod);
+      LZWmod.compress(fileToCompress,compressedFile,resetMethod);
       LZWmod.expand(compressedFile,copyFile);
     } catch (Exception e) {
       throw e;
@@ -88,8 +91,8 @@ public class LZWmodTest {
   
   @After
   public void cleanUpFileCopies() {
-    cleanUpFile(compressedFile);
-    cleanUpFile(copyFile);
+    //cleanUpFile(compressedFile);
+    //cleanUpFile(copyFile);
   }
   
   
