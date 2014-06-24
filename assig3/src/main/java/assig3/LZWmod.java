@@ -26,6 +26,7 @@ public class LZWmod {
 //  private static final int L = 4096;       // number of codewords = 2^W
   //private static final int W = 12;         // codeword width
   private static final double COMPRESSION_RATIO_THRESHOLD = 1.1;
+  private static final int MAX_CODE_WIDTH = 16;
 
   public static void compress(File inFile, File outFile, ResetCodewords reset) { 
     int W = 9;
@@ -81,6 +82,11 @@ public class LZWmod {
         if (code < L) {
           if (t < input.length())    // Add s to symbol table.
             st.put(input.substring(0, t + 1), code++);
+        } else if (W <= MAX_CODE_WIDTH) {
+          W++;
+          L = (int) Math.pow(2, W);
+          if (t < input.length())    // Add s to symbol table.
+            st.put(input.substring(0, t + 1), code++); // TODO should add?
         } else {
           switch (reset) {
           case RESET:
@@ -199,6 +205,14 @@ public class LZWmod {
             " expandedVal: " + expandedVal);
 
         if (freeCWIndex < L) {
+          st[freeCWIndex++] = expandedVal + newCodeword.charAt(0);
+        } else if(W <= MAX_CODE_WIDTH) {
+          W++;
+          L = (int) Math.pow(2, W);
+          String[] newst = new String[L];
+          for (int i=0; i<st.length; i++)
+            newst[i] = st[i];
+          st = newst;
           st[freeCWIndex++] = expandedVal + newCodeword.charAt(0);
         } else {
           switch (reset) {
