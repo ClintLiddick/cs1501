@@ -36,7 +36,6 @@ public class LZWmodTest {
   
   @Parameters
   public static Collection<ResetCodewords[]> resetMehtodParams() {
-//    return Arrays.asList(ResetCodewords.values());
     return Arrays.asList(new ResetCodewords[][] {
         {ResetCodewords.NONE},
         {ResetCodewords.RESET}, 

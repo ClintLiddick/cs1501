@@ -35,6 +35,7 @@ public class LZWmod {
       log.debug("Compressing file " + inFile.toPath());
       BinaryStdIn binaryIn = new BinaryStdIn(new FileInputStream(inFile));
       BinaryStdOut binaryOut = new BinaryStdOut(new PrintStream(new FileOutputStream(outFile)));
+
       int bitsUncompressed = 0;
       int bitsCompressed = 0;
       double originalCompressionRatio = 1;
@@ -66,7 +67,7 @@ public class LZWmod {
       while (input.length() > 0) {
         String longestPrefix = st.longestPrefixOf(input);  // Find max prefix match s.
         int code = st.get(longestPrefix);
-        binaryOut.write(code, W);      // Print s's encoding.
+        binaryOut.write(code, W);      // Print prefix's encoding.
         bitsCompressed += W;
         int t = longestPrefix.length();
         
@@ -80,15 +81,16 @@ public class LZWmod {
         log.debug("COMPRESS code: " + code + " freeCode: "+freeCode+" st: " + st + " t: " + t + " s: " + longestPrefix);
 
         if (freeCode < L) {
-          if (t < input.length()) {    // Add s to symbol table.
+          if (t < input.length()) {    // Add prefix + next char to symbol table.
             st.put(input.substring(0, t + 1), freeCode++);
             log.debug("new codword: " + input.substring(0,t+1));
           }
-        } else if (false && W <= MAX_CODE_WIDTH) {
+        } else if (W < MAX_CODE_WIDTH) {
+          log.debug("COMPRESS -- increasing code width: " + (W+1));
           W++;
           L = (int) Math.pow(2, W);
           if (t < input.length())    // Add s to symbol table.
-            st.put(input.substring(0, t + 1), code++); // TODO should add?
+            st.put(input.substring(0, t + 1), freeCode++); // TODO should add?
         } else {
           switch (reset) {
           case MONITOR:
@@ -103,6 +105,8 @@ public class LZWmod {
           case RESET:
             log.debug("Compress -- resetting table");
             st = new TST<Integer>();
+            W = STARTING_W;
+            L = (int) Math.pow(2, W);
             for (int i = 0; i < EOF; i++)
               st.put("" + (char) i, i);
             freeCode = CLEAR+1;
@@ -163,6 +167,9 @@ public class LZWmod {
         // reset if hit flag
         if (compressedCode == CLEAR && reset != ResetCodewords.NONE) {
           log.info("reset flag encoutered. resetting table");
+          W = STARTING_W;
+          L = (int) Math.pow(2, W);
+          
           st = new String[L];
           for (freeCWIndex = 0; freeCWIndex < EOF; freeCWIndex++)
             st[freeCWIndex] = "" + (char) freeCWIndex;
@@ -183,9 +190,10 @@ public class LZWmod {
         log.debug("EXPAND compressedCode: " + compressedCode +
             " expandedVal: " + expandedVal + " newCodeword: " + newCodeword + " free: " + freeCWIndex);
 
-        if (freeCWIndex < L) {
+        if (freeCWIndex < L - 1) {
           st[freeCWIndex++] = expandedVal + newCodeword.charAt(0);
-        } else if(false && W <= MAX_CODE_WIDTH) {
+        } else if(W < MAX_CODE_WIDTH) {
+          log.debug("EXPAND -- increasing code width: " + (W+1));
           W++;
           L = (int) Math.pow(2, W);
           String[] newst = new String[L];
