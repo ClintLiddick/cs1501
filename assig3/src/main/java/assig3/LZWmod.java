@@ -84,7 +84,7 @@ public class LZWmod {
             st.put(input.substring(0, t + 1), freeCode++);
             log.debug("new codword: " + input.substring(0,t+1));
           }
-        } else if (W <= MAX_CODE_WIDTH) {
+        } else if (false && W <= MAX_CODE_WIDTH) {
           W++;
           L = (int) Math.pow(2, W);
           if (t < input.length())    // Add s to symbol table.
@@ -185,7 +185,7 @@ public class LZWmod {
 
         if (freeCWIndex < L) {
           st[freeCWIndex++] = expandedVal + newCodeword.charAt(0);
-        } else if(W <= MAX_CODE_WIDTH) {
+        } else if(false && W <= MAX_CODE_WIDTH) {
           W++;
           L = (int) Math.pow(2, W);
           String[] newst = new String[L];
