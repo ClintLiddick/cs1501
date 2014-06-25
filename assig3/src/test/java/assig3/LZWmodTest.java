@@ -20,26 +20,26 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import assig3.LZWmod.ResetCodewords;
+import assig3.LZWmod.TableResetPolicy;
 
 @RunWith(Parameterized.class)
 public class LZWmodTest {
   
-  private ResetCodewords resetMethod;
+  private TableResetPolicy resetPolicy;
   private File fileToCompress;
   private File compressedFile;
   private File copyFile;
 
-  public LZWmodTest(ResetCodewords rm) {
-    this.resetMethod = rm;
+  public LZWmodTest(TableResetPolicy rp) {
+    this.resetPolicy = rp;
   }
   
   @Parameters
-  public static Collection<ResetCodewords[]> resetMehtodParams() {
-    return Arrays.asList(new ResetCodewords[][] {
-        {ResetCodewords.NONE},
-        {ResetCodewords.RESET}, 
-        {ResetCodewords.MONITOR}
+  public static Collection<TableResetPolicy[]> resetMehtodParams() {
+    return Arrays.asList(new TableResetPolicy[][] {
+        {TableResetPolicy.NONE},
+        {TableResetPolicy.RESET}, 
+        {TableResetPolicy.MONITOR}
         });
   }
   
@@ -50,7 +50,7 @@ public class LZWmodTest {
     copyFile = new File("/Users/Clint/projects/datafiles/gfCopy.bmp");
     
     try {
-      LZWmod.compress(fileToCompress,compressedFile,resetMethod);
+      LZWmod.compress(fileToCompress,compressedFile,resetPolicy);
       LZWmod.expand(compressedFile,copyFile);
     } catch (Exception e) {
       throw e;

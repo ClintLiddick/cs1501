@@ -22,20 +22,27 @@ import org.slf4j.LoggerFactory;
 public class LZWmod {
   final static Logger log = LoggerFactory.getLogger(LZWmod.class);
 
-  private static final int EOF = 256;        // number of input chars
-  private static final int CLEAR = 257;
-  private static final int STARTING_W = 9;
-  private static final double COMPRESSION_RATIO_THRESHOLD = 1.1;
-  private static final int MAX_CODE_WIDTH = 16;
+  private static final int EOF = 256;           // number of input chars
+  private static final int CLEAR = 257;         // flag to reset table 
+  private static final int STARTING_W = 9;      // starting code bit width
+  private static final int MAX_CODE_WIDTH = 16; // max code bit width
+  private static final double COMPRESSION_RATIO_THRESHOLD = 1.1;    // threshold to reset table when monitoring
 
-  public static void compress(File inFile, File outFile, ResetCodewords reset) { 
+  /**
+   * Compresses a file using adaptive LZW
+   * @param inFile - file to compress
+   * @param outFile - name of compressed output file (will overwrite if already exists)
+   * @param reset - how to handle full table (do nothing, hard reset, monitor/reset)
+   */
+  public static void compress(File inFile, File outFile, TableResetPolicy reset) { 
     int W = STARTING_W;
     int L = (int) Math.pow(2, W);
     try {
       log.debug("Compressing file " + inFile.toPath());
+      // create binary streams with files instead of command line stream redirection
       BinaryStdIn binaryIn = new BinaryStdIn(new FileInputStream(inFile));
       BinaryStdOut binaryOut = new BinaryStdOut(new PrintStream(new FileOutputStream(outFile)));
-
+      // initialize monitoring data
       int bitsUncompressed = 0;
       int bitsCompressed = 0;
       double originalCompressionRatio = 1;
@@ -43,80 +50,87 @@ public class LZWmod {
       double ratioOfRatios = 1;
       boolean monitoring = false;
       
-      // write 2-bit flag for reset method used in compression
+      // write 1-bit flag for reset method used in compression
       switch (reset) {
       case NONE:
         log.info("Compression reset method: NONE");
-        binaryOut.write(0, 2);
+        binaryOut.write(0, 1);
         break;
       case RESET:
         log.info("Compression reset method: RESET");
-        binaryOut.write(1,2);
+        binaryOut.write(1,1);
         break;
       case MONITOR:
         log.info("Compression reset method: MONITOR");
-        binaryOut.write(2,2);
+        binaryOut.write(1,1);
+        break;
       }
-  
+      
+      // read entire file to compress as a string of chars
       String input = binaryIn.readString();
+      // initialize encoding table
       TST<Integer> st = new TST<Integer>();
       for (int i = 0; i < EOF; i++)
         st.put("" + (char) i, i);
-      int freeCode = CLEAR+1;
+      int freeCode = CLEAR+1;   // first free code is after reserved CLEAR code
 
+      // begin compression loop
       while (input.length() > 0) {
-        String longestPrefix = st.longestPrefixOf(input);  // Find max prefix match s.
-        int code = st.get(longestPrefix);
-        binaryOut.write(code, W);      // Print prefix's encoding.
-        bitsCompressed += W;
-        int t = longestPrefix.length();
+        String longestPrefix = st.longestPrefixOf(input);  // Find max prefix of input.
+        int code = st.get(longestPrefix);   // get encoding of prefix
+        binaryOut.write(code, W);   // Print prefix's encoding.
+        bitsCompressed += W;    // W compressed bits written
         
-        bitsUncompressed += t * 8; // TODO verify, java treats char as unicode 16 bit
+        int t = longestPrefix.length();        
+        bitsUncompressed += t * 8; // 8 bits per char (byte) of longestPrefix
+        
+        // update "original" compression ratio as long as we haven't started monitoring degredation
         if (!monitoring)
           originalCompressionRatio = (double) bitsUncompressed / bitsCompressed;
-        else {
+        else {  // monitor ratio of final compression ratio before table filled, and current comp. ratio
           currentCompressionRation = (double) bitsUncompressed / bitsCompressed;
           ratioOfRatios = originalCompressionRatio/currentCompressionRation;
         }
         log.debug("COMPRESS code: " + code + " freeCode: "+freeCode+" st: " + st + " t: " + t + " s: " + longestPrefix);
 
-        if (freeCode < L) {
-          if (t < input.length()) {    // Add prefix + next char to symbol table.
-            st.put(input.substring(0, t + 1), freeCode++);
+        if (freeCode < L) { // still room in table
+          if (t < input.length()) {
+            st.put(input.substring(0, t + 1), freeCode++);  // Add prefix + next char to symbol table.
             log.debug("new codword: " + input.substring(0,t+1));
           }
-        } else if (W < MAX_CODE_WIDTH) {
+        } else if (W < MAX_CODE_WIDTH) {    // still able to expand codeword/table size
           log.debug("COMPRESS -- increasing code width: " + (W+1));
           W++;
           L = (int) Math.pow(2, W);
-          if (t < input.length())    // Add s to symbol table.
-            st.put(input.substring(0, t + 1), freeCode++); // TODO should add?
-        } else {
+          if (t < input.length())
+            st.put(input.substring(0, t + 1), freeCode++); // Add prefix + next char to symbol table.
+        } else {    // table full and code width maxed, apply reset policy
           switch (reset) {
           case MONITOR:
-            monitoring = true;
+            monitoring = true;  // begin monitoring
             if (ratioOfRatios < COMPRESSION_RATIO_THRESHOLD) {
-              break; // do not reset
+              break;    // do not reset
             } else {
-              monitoring = false;
+              monitoring = false;   // reset
               log.debug("compression ratio threshold exceeded");
             }
-            // FALLTHROUGH
+            // FALLTHROUGH TO RESET
           case RESET:
             log.debug("Compress -- resetting table");
+            // reset table and reinitialize starting values
             st = new TST<Integer>();
             W = STARTING_W;
             L = (int) Math.pow(2, W);
             for (int i = 0; i < EOF; i++)
               st.put("" + (char) i, i);
             freeCode = CLEAR+1;
-            binaryOut.write(CLEAR,W);
+            binaryOut.write(CLEAR,W);   // write reset flag
             break;
           case NONE:
             break;
           }
         }
-        input = input.substring(t);            // Scan past s in input.
+        input = input.substring(t);            // remove longestPrefix from input stream
       }
       binaryOut.write(EOF, W);
       binaryOut.close();
@@ -125,48 +139,55 @@ public class LZWmod {
     }
   } 
 
-
+  /**
+   * Decompresses an LZW encoded file
+   * @param inFile - file to be decompressed
+   * @param outFile - name of decompressed output file (will overwrite if already exists)
+   */
   public static void expand(File inFile, File outFile) {
     int W = STARTING_W;
     int L = (int) Math.pow(2, W);
     log.debug("L: " + L);
     try {
+      // create binary streams with files instead of command line stream redirection
       BinaryStdIn binaryIn = new BinaryStdIn(new FileInputStream(inFile));
       BinaryStdOut binaryOut = new BinaryStdOut(new PrintStream(new FileOutputStream(outFile)));
-
-      ResetCodewords reset = ResetCodewords.NONE;
-      
-      int resetFlag = binaryIn.readInt(2);
+      // default policy is do not reset
+      TableResetPolicy reset = TableResetPolicy.NONE;
+      // read first bit flag to set reset policy
+      int resetFlag = binaryIn.readInt(1);
       log.debug("Expand reset flag: " + resetFlag);
       if (resetFlag != 0) {
-        reset = ResetCodewords.RESET;
-      }
-      
-
+        reset = TableResetPolicy.RESET;
+      } 
+      // create minimum String array to hold encoding table
       String[] st = new String[L];
-      int freeCWIndex; // next available codeword value
+      int freeCWIndex;  // next available codeword value
 
-      // initialize symbol table with all 1-character strings
+      // initialize encoding table with all 1-byte strings
       for (freeCWIndex = 0; freeCWIndex < EOF; freeCWIndex++)
         st[freeCWIndex] = "" + (char) freeCWIndex;
       
-      st[freeCWIndex++] = "";   // (unused) lookahead for EOF
+      st[freeCWIndex++] = "";   // unused, codeword for EOF
       st[freeCWIndex++] = "";   // unused, codeword for CLEAR
 
-      
+      // do initial read/decode/write to "catch-up" to compress algorithm
+      // expandedVal is "previous pattern"
       int compressedCode = binaryIn.readInt(W);
       String expandedVal = st[compressedCode];
       binaryOut.write(expandedVal);
-
+      
+      // begin decompression loop
       while (true) {
+        compressedCode = binaryIn.readInt(W);   // read 1 compressed code
         
-        compressedCode = binaryIn.readInt(W);
-
-        if (compressedCode == EOF) // EOF flag
+        // check if EOF
+        if (compressedCode == EOF)
           break;        
-        // reset if hit flag
-        if (compressedCode == CLEAR && reset != ResetCodewords.NONE) {
+        // check if CLEAR and should reset
+        if (compressedCode == CLEAR && reset != TableResetPolicy.NONE) {
           log.info("reset flag encoutered. resetting table");
+          // reinitialize table and initial values
           W = STARTING_W;
           L = (int) Math.pow(2, W);
           
@@ -174,15 +195,18 @@ public class LZWmod {
           for (freeCWIndex = 0; freeCWIndex < EOF; freeCWIndex++)
             st[freeCWIndex] = "" + (char) freeCWIndex;
           
-          st[freeCWIndex++] = "";   // (unused) lookahead for EOF
+          st[freeCWIndex++] = "";   // unused, codeword for EOF
           st[freeCWIndex++] = "";   // unused, codeword for CLEAR
           
+          // redo initial "catch-up" to compression algo
+          // expandedVal is "previous pattern"
           compressedCode = binaryIn.readInt(W);
           expandedVal = st[compressedCode];
           binaryOut.write(expandedVal);
           continue;
         }
         
+        // decode compressed code
         String newCodeword = st[compressedCode];
         if (freeCWIndex == compressedCode) 
           newCodeword = expandedVal + expandedVal.charAt(0);   // special case hack
@@ -190,21 +214,23 @@ public class LZWmod {
         log.debug("EXPAND compressedCode: " + compressedCode +
             " expandedVal: " + expandedVal + " newCodeword: " + newCodeword + " free: " + freeCWIndex);
 
-        if (freeCWIndex < L - 1) {
-          st[freeCWIndex++] = expandedVal + newCodeword.charAt(0);
-        } else if(W < MAX_CODE_WIDTH) {
+        if (freeCWIndex < L - 1) {  // L-1 to match comp. algo output at width expansion boundary
+          st[freeCWIndex++] = expandedVal + newCodeword.charAt(0);  // add new codeword to table
+        } else if(W < MAX_CODE_WIDTH) { // table full, expand code width
           log.debug("EXPAND -- increasing code width: " + (W+1));
           W++;
           L = (int) Math.pow(2, W);
+          // extend and copy array for table
+          // TODO test performance memory vs. speed for copy
           String[] newst = new String[L];
           for (int i=0; i<st.length; i++)
             newst[i] = st[i];
           st = newst;
-          st[freeCWIndex++] = expandedVal + newCodeword.charAt(0);
+          st[freeCWIndex++] = expandedVal + newCodeword.charAt(0);  // add new codeword at expanded width
         }
-                
-        expandedVal = newCodeword;
-        binaryOut.write(expandedVal);
+        
+        expandedVal = newCodeword;  // previous = current
+        binaryOut.write(expandedVal);   // write decompressed data
         log.debug("uncompressed: " + expandedVal);
       }
       binaryOut.close();
@@ -216,32 +242,33 @@ public class LZWmod {
 
 
   public static void main(String[] args) {
-     
+    
+    // parse arguments
     if (args[0].equals("-")) {
-      if (args.length != 4) {
+      if (args.length != 4) {   // compress requires reset policy and two files
         System.out.println("usage: java assig3.LZWmod - <reset_method> <input_file> <output_file>");
         System.exit(1);
       }
-      ResetCodewords resetMethod = ResetCodewords.NONE;
+      TableResetPolicy resetMethod = TableResetPolicy.NONE;
       switch(args[1].toLowerCase().charAt(0)) {
       case 'n':
-        resetMethod = ResetCodewords.NONE;
+        resetMethod = TableResetPolicy.NONE;
         break;
       case 'r':
-        resetMethod = ResetCodewords.RESET;
+        resetMethod = TableResetPolicy.RESET;
         break;
       case 'm':
-        resetMethod = ResetCodewords.MONITOR;
+        resetMethod = TableResetPolicy.MONITOR;
         break;
       default:
-        System.out.println("Invalid reset method");
+        System.out.println("Invalid reset policy");
         System.out.println("n = none, r = reset always, m = monitor then reset");
         System.exit(1);
         break;
       }
       compress(new File(args[2]), new File(args[3]),resetMethod);
     } else if (args[0].equals("+")) {
-      if (args.length != 3) {
+      if (args.length != 3) {   // decompress only requires two files
         System.out.println("usage: java assig3.LZWmod + <input_file> <output_file>");
         System.exit(1);
       }
@@ -252,7 +279,7 @@ public class LZWmod {
     }
   }
   
-  protected static enum ResetCodewords {
+  protected static enum TableResetPolicy {
     NONE,
     MONITOR,
     RESET,
