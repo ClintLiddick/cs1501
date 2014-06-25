@@ -24,12 +24,11 @@ public class LZWmod {
 
   private static final int EOF = 256;        // number of input chars
   private static final int CLEAR = 257;
-//  private static final int L = 4096;       // number of codewords = 2^W
-  //private static final int W = 12;         // codeword width
+  private static final int STARTING_W = 9;
   private static final double COMPRESSION_RATIO_THRESHOLD = 1.1;
 
   public static void compress(File inFile, File outFile, ResetCodewords reset) { 
-    int W = 9;
+    int W = STARTING_W;
     int L = (int) Math.pow(2, W);
     try {
       log.debug("Compressing file " + inFile.toPath());
@@ -56,18 +55,17 @@ public class LZWmod {
         log.info("Compression reset method: MONITOR");
         binaryOut.write(2,2);
       }
-      
-      
-      
+  
       String input = binaryIn.readString();
       TST<Integer> st = new TST<Integer>();
       for (int i = 0; i < EOF; i++)
         st.put("" + (char) i, i);
-      int code = CLEAR+1;
+      int freeCode = CLEAR+1;
 
       while (input.length() > 0) {
         String longestPrefix = st.longestPrefixOf(input);  // Find max prefix match s.
-        binaryOut.write(st.get(longestPrefix), W);      // Print s's encoding.
+        int code = st.get(longestPrefix);
+        binaryOut.write(code, W);      // Print s's encoding.
         bitsCompressed += W;
         int t = longestPrefix.length();
         
@@ -77,13 +75,14 @@ public class LZWmod {
         else {
           currentCompressionRation = (double) bitsUncompressed / bitsCompressed;
           ratioOfRatios = originalCompressionRatio/currentCompressionRation;
-          //log.debug("Compress -- codewords: " + code +" compression ratio ratio: " + ratioOfRatios);
         }
-        log.debug("COMPRESS code: "+code+" st: " + st + " t: " + t + " s: " + longestPrefix);
+        log.debug("COMPRESS code: " + code + " freeCode: "+freeCode+" st: " + st + " t: " + t + " s: " + longestPrefix);
 
-        if (code < L) {
-          if (t < input.length())    // Add s to symbol table.
-            st.put(input.substring(0, t + 1), code++);
+        if (freeCode < L) {
+          if (t < input.length()) {    // Add s to symbol table.
+            st.put(input.substring(0, t + 1), freeCode++);
+            log.debug("new codword: " + input.substring(0,t+1));
+          }
         } else {
           switch (reset) {
           case MONITOR:
@@ -100,13 +99,12 @@ public class LZWmod {
             st = new TST<Integer>();
             for (int i = 0; i < EOF; i++)
               st.put("" + (char) i, i);
-            code = CLEAR+1;
+            freeCode = CLEAR+1;
             binaryOut.write(CLEAR,W);
             break;
           case NONE:
             break;
           }
-
         }
         input = input.substring(t);            // Scan past s in input.
       }
@@ -119,7 +117,7 @@ public class LZWmod {
 
 
   public static void expand(File inFile, File outFile) {
-    int W = 9;
+    int W = STARTING_W;
     int L = (int) Math.pow(2, W);
     log.debug("L: " + L);
     try {
@@ -142,17 +140,18 @@ public class LZWmod {
       for (freeCWIndex = 0; freeCWIndex < EOF; freeCWIndex++)
         st[freeCWIndex] = "" + (char) freeCWIndex;
       
-      st[freeCWIndex++] = "";                        // (unused) lookahead for EOF
+      st[freeCWIndex++] = "";   // (unused) lookahead for EOF
       st[freeCWIndex++] = "";   // unused, codeword for CLEAR
 
       
       int compressedCode = binaryIn.readInt(W);
       String expandedVal = st[compressedCode];
-      while (true) {
-        binaryOut.write(expandedVal);
+      binaryOut.write(expandedVal);
 
-        compressedCode = binaryIn.readInt(W);
+      while (true) {
         
+        compressedCode = binaryIn.readInt(W);
+
         if (compressedCode == EOF) // EOF flag
           break;        
         // reset if hit flag
@@ -166,20 +165,25 @@ public class LZWmod {
           st[freeCWIndex++] = "";   // unused, codeword for CLEAR
           
           compressedCode = binaryIn.readInt(W);
+          expandedVal = st[compressedCode];
+          binaryOut.write(expandedVal);
+          continue;
         }
-
+        
         String newCodeword = st[compressedCode];
         if (freeCWIndex == compressedCode) 
           newCodeword = expandedVal + expandedVal.charAt(0);   // special case hack
         
         log.debug("EXPAND compressedCode: " + compressedCode +
-            " expandedVal: " + expandedVal);
+            " expandedVal: " + expandedVal + " newCodeword: " + newCodeword + " free: " + freeCWIndex);
 
         if (freeCWIndex < L) {
           st[freeCWIndex++] = expandedVal + newCodeword.charAt(0);
         }
-        
+                
         expandedVal = newCodeword;
+        binaryOut.write(expandedVal);
+        log.debug("uncompressed: " + expandedVal);
       }
       binaryOut.close();
     } catch (FileNotFoundException ex) {

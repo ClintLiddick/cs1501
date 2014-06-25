@@ -46,9 +46,9 @@ public class LZWmodTest {
   
   @Before
   public void createCompressedAndDecompressedCopy() throws Exception {
-    fileToCompress = new File("/Users/Clint/projects/assig3data/wacky.bmp");
+    fileToCompress = new File("/Users/Clint/projects/assig3data/gone_fishing.bmp");
     compressedFile = new File("/Users/Clint/projects/datafiles/compressed.lzw");
-    copyFile = new File("/Users/Clint/projects/datafiles/wackyCopy.bmp");
+    copyFile = new File("/Users/Clint/projects/datafiles/gfCopy.bmp");
     
     try {
       LZWmod.compress(fileToCompress,compressedFile,resetMethod);
@@ -91,8 +91,8 @@ public class LZWmodTest {
   
   @After
   public void cleanUpFileCopies() {
-    //cleanUpFile(compressedFile);
-    //cleanUpFile(copyFile);
+    cleanUpFile(compressedFile);
+    cleanUpFile(copyFile);
   }
   
   
