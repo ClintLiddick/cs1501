@@ -1,11 +1,10 @@
 /*************************************************************************
- *  Compilation:  javac LZW.java
- *  Execution:    java LZW - < input.txt   (compress)
- *  Execution:    java LZW + < input.txt   (expand)
- *  Dependencies: BinaryIn.java BinaryOut.java
+ *  Compilation:  javac LZWmod.java
+ *  Execution:    java LZW - <reset> input.txt output.lzw   (compress)
+ *  Execution:    java LZW + input.lzw output.txt           (expand)
+ *  Dependencies: BinaryIn.java BinaryOut.java TST.java
  *
- *  Compress or expand binary input from standard input using LZW.
- *
+ *  Compress or expand binary input from files using LZW.
  *
  *************************************************************************/
 package assig3;
@@ -16,12 +15,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class LZWmod {
-  final static Logger log = LoggerFactory.getLogger(LZWmod.class);
-
   private static final int EOF = 256;           // number of input chars
   private static final int CLEAR = 257;         // flag to reset table 
   private static final int STARTING_W = 9;      // starting code bit width
@@ -38,7 +32,6 @@ public class LZWmod {
     int W = STARTING_W;
     int L = (int) Math.pow(2, W);
     try {
-      log.debug("Compressing file " + inFile.toPath());
       // create binary streams with files instead of command line stream redirection
       BinaryStdIn binaryIn = new BinaryStdIn(new FileInputStream(inFile));
       BinaryStdOut binaryOut = new BinaryStdOut(new PrintStream(new FileOutputStream(outFile)));
@@ -53,15 +46,10 @@ public class LZWmod {
       // write 1-bit flag for reset method used in compression
       switch (reset) {
       case NONE:
-        log.info("Compression reset method: NONE");
         binaryOut.write(0, 1);
         break;
       case RESET:
-        log.info("Compression reset method: RESET");
-        binaryOut.write(1,1);
-        break;
       case MONITOR:
-        log.info("Compression reset method: MONITOR");
         binaryOut.write(1,1);
         break;
       }
@@ -91,15 +79,12 @@ public class LZWmod {
           currentCompressionRation = (double) bitsUncompressed / bitsCompressed;
           ratioOfRatios = originalCompressionRatio/currentCompressionRation;
         }
-        log.debug("COMPRESS code: " + code + " freeCode: "+freeCode+" st: " + st + " t: " + t + " s: " + longestPrefix);
 
         if (freeCode < L) { // still room in table
           if (t < input.length()) {
             st.put(input.substring(0, t + 1), freeCode++);  // Add prefix + next char to symbol table.
-            log.debug("new codword: " + input.substring(0,t+1));
           }
         } else if (W < MAX_CODE_WIDTH) {    // still able to expand codeword/table size
-          log.debug("COMPRESS -- increasing code width: " + (W+1));
           W++;
           L = (int) Math.pow(2, W);
           if (t < input.length())
@@ -112,11 +97,9 @@ public class LZWmod {
               break;    // do not reset
             } else {
               monitoring = false;   // reset
-              log.debug("compression ratio threshold exceeded");
             }
             // FALLTHROUGH TO RESET
           case RESET:
-            log.debug("Compress -- resetting table");
             // reset table and reinitialize starting values
             st = new TST<Integer>();
             W = STARTING_W;
@@ -135,7 +118,7 @@ public class LZWmod {
       binaryOut.write(EOF, W);
       binaryOut.close();
     } catch (FileNotFoundException ex) {
-      log.error(ex.getMessage());
+      System.err.println(ex.getMessage());
     }
   } 
 
@@ -147,7 +130,6 @@ public class LZWmod {
   public static void expand(File inFile, File outFile) {
     int W = STARTING_W;
     int L = (int) Math.pow(2, W);
-    log.debug("L: " + L);
     try {
       // create binary streams with files instead of command line stream redirection
       BinaryStdIn binaryIn = new BinaryStdIn(new FileInputStream(inFile));
@@ -156,7 +138,6 @@ public class LZWmod {
       TableResetPolicy reset = TableResetPolicy.NONE;
       // read first bit flag to set reset policy
       int resetFlag = binaryIn.readInt(1);
-      log.debug("Expand reset flag: " + resetFlag);
       if (resetFlag != 0) {
         reset = TableResetPolicy.RESET;
       } 
@@ -186,7 +167,6 @@ public class LZWmod {
           break;        
         // check if CLEAR and should reset
         if (compressedCode == CLEAR && reset != TableResetPolicy.NONE) {
-          log.info("reset flag encoutered. resetting table");
           // reinitialize table and initial values
           W = STARTING_W;
           L = (int) Math.pow(2, W);
@@ -210,14 +190,10 @@ public class LZWmod {
         String newCodeword = st[compressedCode];
         if (freeCWIndex == compressedCode) 
           newCodeword = expandedVal + expandedVal.charAt(0);   // special case hack
-        
-        log.debug("EXPAND compressedCode: " + compressedCode +
-            " expandedVal: " + expandedVal + " newCodeword: " + newCodeword + " free: " + freeCWIndex);
 
         if (freeCWIndex < L - 1) {  // L-1 to match comp. algo output at width expansion boundary
           st[freeCWIndex++] = expandedVal + newCodeword.charAt(0);  // add new codeword to table
         } else if(W < MAX_CODE_WIDTH) { // table full, expand code width
-          log.debug("EXPAND -- increasing code width: " + (W+1));
           W++;
           L = (int) Math.pow(2, W);
           // extend and copy array for table
@@ -231,11 +207,10 @@ public class LZWmod {
         
         expandedVal = newCodeword;  // previous = current
         binaryOut.write(expandedVal);   // write decompressed data
-        log.debug("uncompressed: " + expandedVal);
       }
       binaryOut.close();
     } catch (FileNotFoundException ex) {
-      log.error(ex.getMessage());
+      System.err.println(ex.getMessage());
     }
   }
 
