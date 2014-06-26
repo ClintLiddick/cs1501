@@ -2,7 +2,7 @@
  *  Compilation:  javac BinaryStdOut.java
  *  Execution:    java BinaryStdOut
  *
- *  Write binary data to standard output, either one 1-bit boolean,
+ *  Write binary data to PrintStream, either one 1-bit boolean,
  *  one 8-bit char, one 32-bit int, one 64-bit double, one 32-bit float,
  *  or one 64-bit long at a time.
  *
@@ -16,10 +16,10 @@ import java.io.BufferedOutputStream;
 import java.io.PrintStream;
 
 /**
- *  <i>Binary standard output</i>. This class provides methods for converting
+ *  <i>Binary output</i>. This class provides methods for converting
  *  primtive type variables (<tt>boolean</tt>, <tt>byte</tt>, <tt>char</tt>,
  *  <tt>int</tt>, <tt>long</tt>, <tt>float</tt>, and <tt>double</tt>)
- *  to sequences of bits and writing them to standard output.
+ *  to sequences of bits and writing them to a PrintStream.
  *  Uses big-endian (most-significant byte first).
  *  <p>
  *  The client must <tt>flush()</tt> the output stream when finished writing bits.
@@ -39,7 +39,7 @@ public final class BinaryStdOut {
     }
 
    /**
-     * Write the specified bit to standard output.
+     * Write the specified bit to a PrintStream.
      */
     private void writeBit(boolean bit) {
         // add bit to buffer
@@ -52,7 +52,7 @@ public final class BinaryStdOut {
     } 
 
    /**
-     * Write the 8-bit byte to standard output.
+     * Write the 8-bit byte to a PrintStream.
      */
     private void writeByte(int x) {
         assert x >= 0 && x < 256;
@@ -71,7 +71,7 @@ public final class BinaryStdOut {
         }
     }
 
-    // write out any remaining bits in buffer to standard output, padding with 0s
+    // write out any remaining bits in buffer to a PrintStream, padding with 0s
     private void clearBuffer() {
         if (N == 0) return;
         if (N > 0) buffer <<= (8 - N);
@@ -82,7 +82,7 @@ public final class BinaryStdOut {
     }
 
    /**
-     * Flush standard output, padding 0s if number of bits written so far
+     * Flush PrintStream, padding 0s if number of bits written so far
      * is not a multiple of 8.
      */
     public void flush() {
@@ -92,7 +92,7 @@ public final class BinaryStdOut {
     }
 
    /**
-     * Flush and close standard output. Once standard output is closed, you can no
+     * Flush and close PrintStream. Once PrintStream is closed, you can no
      * longer write bits to it.
      */
     public void close() {
@@ -103,7 +103,7 @@ public final class BinaryStdOut {
 
 
    /**
-     * Write the specified bit to standard output.
+     * Write the specified bit to PrintStream.
      * @param x the <tt>boolean</tt> to write.
      */
     public void write(boolean x) {
@@ -111,7 +111,7 @@ public final class BinaryStdOut {
     } 
 
    /**
-     * Write the 8-bit byte to standard output.
+     * Write the 8-bit byte to PrintStream.
      * @param x the <tt>byte</tt> to write.
      */
     public void write(byte x) {
@@ -119,7 +119,7 @@ public final class BinaryStdOut {
     }
 
    /**
-     * Write the 32-bit int to standard output.
+     * Write the 32-bit int to PrintStream.
      * @param x the <tt>int</tt> to write.
      */
     public void write(int x) {
@@ -130,7 +130,7 @@ public final class BinaryStdOut {
     }
 
    /**
-     * Write the r-bit int to standard output.
+     * Write the r-bit int to PrintStream.
      * @param x the <tt>int</tt> to write.
      * @param r the number of relevant bits in the char.
      * @throws RuntimeException if <tt>r</tt> is not between 1 and 32.
@@ -151,7 +151,7 @@ public final class BinaryStdOut {
 
 
    /**
-     * Write the 64-bit double to standard output.
+     * Write the 64-bit double to PrintStream.
      * @param x the <tt>double</tt> to write.
      */
     public void write(double x) {
@@ -159,7 +159,7 @@ public final class BinaryStdOut {
     }
 
    /**
-     * Write the 64-bit long to standard output.
+     * Write the 64-bit long to PrintStream.
      * @param x the <tt>long</tt> to write.
      */
     public void write(long x) {
@@ -174,7 +174,7 @@ public final class BinaryStdOut {
     }
 
    /**
-     * Write the 32-bit float to standard output.
+     * Write the 32-bit float to PrintStream.
      * @param x the <tt>float</tt> to write.
      */
     public void write(float x) {
@@ -182,7 +182,7 @@ public final class BinaryStdOut {
     }
 
    /**
-     * Write the 16-bit int to standard output.
+     * Write the 16-bit int to PrintStream.
      * @param x the <tt>short</tt> to write.
      */
     public void write(short x) {
@@ -191,7 +191,7 @@ public final class BinaryStdOut {
     }
 
    /**
-     * Write the 8-bit char to standard output.
+     * Write the 8-bit char to PrintStream.
      * @param x the <tt>char</tt> to write.
      * @throws RuntimeException if <tt>x</tt> is not betwen 0 and 255.
      */
@@ -201,7 +201,7 @@ public final class BinaryStdOut {
     }
 
    /**
-     * Write the r-bit char to standard output.
+     * Write the r-bit char to PrintStream.
      * @param x the <tt>char</tt> to write.
      * @param r the number of relevant bits in the char.
      * @throws RuntimeException if <tt>r</tt> is not between 1 and 16.
@@ -218,7 +218,7 @@ public final class BinaryStdOut {
     }
 
    /**
-     * Write the string of 8-bit characters to standard output.
+     * Write the string of 8-bit characters to PrintStream.
      * @param s the <tt>String</tt> to write.
      * @throws RuntimeException if any character in the string is not
      * between 0 and 255.
@@ -229,7 +229,7 @@ public final class BinaryStdOut {
     }
 
    /**
-     * Write the String of r-bit characters to standard output.
+     * Write the String of r-bit characters to PrintStream.
      * @param s the <tt>String</tt> to write.
      * @param r the number of relevants bits in each character.
      * @throws RuntimeException if r is not between 1 and 16.
@@ -240,18 +240,4 @@ public final class BinaryStdOut {
         for (int i = 0; i < s.length(); i++)
             write(s.charAt(i), r);
     }
-
-   /**
-     * Test client.
-     */
-    /*
-    public void main(String[] args) {
-        int N = Integer.parseInt(args[0]);
-        // write to standard output
-        for (int i = 0; i < N; i++) {
-            write(i);
-        }
-        flush();
-    }*/
-
 }
