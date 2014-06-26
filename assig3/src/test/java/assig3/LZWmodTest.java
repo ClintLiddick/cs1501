@@ -12,6 +12,7 @@ import java.util.Collection;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -27,24 +28,33 @@ public class LZWmodTest {
   private File compressedFile;
   private File copyFile;
 
-  public LZWmodTest(TableResetPolicy rp) {
+  public LZWmodTest(String filename, TableResetPolicy rp) {
+    this.fileToCompress = new File("/Users/Clint/projects/assig3data/"+filename);
+    this.compressedFile = new File("/Users/Clint/projects/datafiles/" + rp.toString() + filename + ".lzw");
+    this.copyFile = new File("/Users/Clint/projects/datafiles/" + rp.toString() + filename);
     this.resetPolicy = rp;
   }
   
   @Parameters
-  public static Collection<TableResetPolicy[]> resetMehtodParams() {
-    return Arrays.asList(new TableResetPolicy[][] {
-        {TableResetPolicy.NONE},
-        {TableResetPolicy.RESET}, 
-        {TableResetPolicy.MONITOR}
+  public static Collection<Object[]> data() {
+    return Arrays.asList(new Object[][] {
+        {"large.txt",TableResetPolicy.NONE},
+        {"large.txt", TableResetPolicy.RESET}, 
+        {"large.txt", TableResetPolicy.MONITOR},
+        
+        {"texts.tar",TableResetPolicy.NONE},
+        {"texts.tar", TableResetPolicy.RESET}, 
+        {"texts.tar", TableResetPolicy.MONITOR},
+        
+        {"all.tar",TableResetPolicy.NONE},
+        {"all.tar", TableResetPolicy.RESET}, 
+        {"all.tar", TableResetPolicy.MONITOR}
         });
   }
   
   @Before
   public void createCompressedAndDecompressedCopy() throws Exception {
-    fileToCompress = new File("/Users/Clint/projects/assig3data/gone_fishing.bmp");
-    compressedFile = new File("/Users/Clint/projects/datafiles/compressed.lzw");
-    copyFile = new File("/Users/Clint/projects/datafiles/gfCopy.bmp");
+//    compressedFile = new File("/Users/Clint/projects/datafiles/tempcompressed.lzw");
     
     try {
       LZWmod.compress(fileToCompress,compressedFile,resetPolicy);
@@ -75,7 +85,6 @@ public class LZWmodTest {
         assertEquals("data inconsistency with copy",orig,copy);
       } while (orig != -1);
     } catch (Exception ex) {
-//      ex.printStackTrace();
       throw ex;
     } finally {
       try {
@@ -85,10 +94,9 @@ public class LZWmodTest {
     }
   }
   
-  @After
-  public void cleanUpFileCopies() {
-    cleanUpFile(compressedFile);
-    cleanUpFile(copyFile);
+  private void cleanUpFileCopies() {
+//    cleanUpFile(compressedFile);
+//    cleanUpFile(copyFile);
   }
   
   
