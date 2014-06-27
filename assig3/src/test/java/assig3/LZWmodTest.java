@@ -38,13 +38,13 @@ public class LZWmodTest {
   @Parameters
   public static Collection<Object[]> data() {
     return Arrays.asList(new Object[][] {
-        {"large.txt",TableResetPolicy.NONE},
+        /*{"large.txt",TableResetPolicy.NONE},
         {"large.txt", TableResetPolicy.RESET}, 
         {"large.txt", TableResetPolicy.MONITOR},
         
         {"texts.tar",TableResetPolicy.NONE},
         {"texts.tar", TableResetPolicy.RESET}, 
-        {"texts.tar", TableResetPolicy.MONITOR},
+        {"texts.tar", TableResetPolicy.MONITOR},*/
         
         {"all.tar",TableResetPolicy.NONE},
         {"all.tar", TableResetPolicy.RESET}, 
