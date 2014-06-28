@@ -208,6 +208,7 @@ public class LZWmod {
         expandedVal = newCodeword;  // previous = current
         binaryOut.write(expandedVal);   // write decompressed data
       }
+      binaryIn.close();
       binaryOut.close();
     } catch (FileNotFoundException ex) {
       System.err.println(ex.getMessage());
