@@ -208,7 +208,6 @@ public class LZWmod {
         expandedVal = newCodeword;  // previous = current
         binaryOut.write(expandedVal);   // write decompressed data
       }
-      binaryIn.close();
       binaryOut.close();
     } catch (FileNotFoundException ex) {
       System.err.println(ex.getMessage());
@@ -220,9 +219,7 @@ public class LZWmod {
   public static void main(String[] args) {
     
     // parse arguments
-    if (args.length < 3) {
-      System.out.println("Enter - to compress or + to decomopress");
-    } else if (args[0].equals("-")) {
+    if (args[0].equals("-")) {
       if (args.length != 4) {   // compress requires reset policy and two files
         System.out.println("usage: java assig3.LZWmod - <reset_method> <input_file> <output_file>");
         System.exit(1);
