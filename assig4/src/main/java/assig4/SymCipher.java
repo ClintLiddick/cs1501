@@ -16,5 +16,5 @@ public interface SymCipher
 	
 	// Decrypt the array of bytes and generate and return the corresponding String
 	public String decode(byte [] bytes);
-	
+
 }

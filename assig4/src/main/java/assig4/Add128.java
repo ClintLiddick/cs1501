@@ -41,12 +41,4 @@ class Add128 implements SymCipher {
     
     return new String(clearText);
   }
-
-//  private static String toASCII(byte[] bytes) {
-//    StringBuilder sb = new StringBuilder();
-//    for (int i=0; i<bytes.length; i++) {
-//      sb.append((char)bytes[i]);
-//    }
-//    return sb.toString();
-//  }
 }

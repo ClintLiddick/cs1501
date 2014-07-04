@@ -53,5 +53,4 @@ class Substitute implements SymCipher {
     }
     return new String(clearText);
   }
-
 }
