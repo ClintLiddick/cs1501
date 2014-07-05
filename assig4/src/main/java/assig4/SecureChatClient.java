@@ -28,6 +28,8 @@ public class SecureChatClient extends JFrame implements Runnable, ActionListener
     JTextArea outputArea;
     JLabel prompt;
     JTextField inputField;
+    JScrollPane scrollPane;
+    JScrollBar scrollBar;
     String myName, serverName;
     Socket connection;
     
@@ -90,8 +92,12 @@ public class SecureChatClient extends JFrame implements Runnable, ActionListener
         Box b = Box.createHorizontalBox();  // Set up graphical environment for
         outputArea = new JTextArea(8, 30);  // user
         outputArea.setEditable(false);
-        b.add(new JScrollPane(outputArea));
-
+        outputArea.setLineWrap(true);
+        outputArea.setWrapStyleWord(true);
+        scrollPane = new JScrollPane(outputArea);
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        b.add(scrollPane);
+        scrollBar = scrollPane.getVerticalScrollBar();
         outputArea.append("Welcome to the Chat Group, " + myName + "\n");
 
         inputField = new JTextField("");  // This is where user will type input
@@ -140,8 +146,14 @@ public class SecureChatClient extends JFrame implements Runnable, ActionListener
         while (true)
         {
              try {
-                String currMsg = symCipher.decode((byte[]) myReader.readObject());
+               byte[] cipher = (byte[]) myReader.readObject();
+                String currMsg = symCipher.decode(cipher);
                 outputArea.append(currMsg+"\n");
+                scrollBar.setValue(scrollBar.getMaximum());  // always scroll to bottom
+                System.out.println("Cipher received: " + cipher);
+                System.out.println("Decoded Bytes: " + currMsg.getBytes());
+                System.out.println("Msg received: " + currMsg);
+                System.out.println();
              }
              catch (Exception e)
              {
@@ -157,8 +169,13 @@ public class SecureChatClient extends JFrame implements Runnable, ActionListener
         String currMsg = e.getActionCommand();      // Get input value
         inputField.setText("");
         try {
-          myWriter.writeObject(symCipher.encode(myName + ":" + currMsg));   // Add name and send it
+          String msg = myName + ": " + currMsg;
+          byte[] cipher = symCipher.encode(msg);
+          myWriter.writeObject(cipher);   // Add name and send it
           myWriter.flush();
+          System.out.println("Msg sent: " + msg);
+          System.out.println("Cipher: " + cipher);
+          System.out.println();
         } catch (IOException ex) {
           outputArea.append("Error sending message\n");
         }
