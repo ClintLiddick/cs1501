@@ -132,7 +132,7 @@ public class Assig5 {
   }
 
   private void printDistMST() {
-    IndexMinPQ<Double> pq = new IndexMinPQ<Double>(graph.getV());
+    IndexMinPQ<Double> pq = new IndexMinPQ<Double>(graph.getV(), new EdgeDistanceComparator());
     // arrays will be 0 indexed, so array[vertID - 1] to access
     double[] distTo = new double[graph.getV()];
     boolean[] marked = new boolean[graph.getV()];

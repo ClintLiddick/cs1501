@@ -1,5 +1,7 @@
 package assig5;
 
+import java.util.Comparator;
+
 public class Edge {
   private final int v;
   private final int w;
@@ -36,5 +38,21 @@ public class Edge {
   
   public String toString() {
     return String.format("%d-%d %d %.2f",v,w,distance,cost);
+  }
+}
+
+
+class EdgeDistanceComparator implements Comparator<Edge> {
+  @Override
+  public int compare(Edge o1, Edge o2) {
+    return Double.compare(o1.getDistance(), o2.getDistance());
+  }
+}
+
+class EdgeCostComparator implements Comparator<Edge> {
+  @Override
+  public int compare(Edge o1, Edge o2) {
+    // TODO Auto-generated method stub
+    return Double.compare(o1.getCost(), o2.getCost());
   }
 }
