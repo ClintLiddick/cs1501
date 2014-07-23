@@ -83,11 +83,21 @@ public class Assig5 {
         case DIST_MST:
           printDistMST();
           break;
-        case SP_MILES:
-          shortestDistSP();
+        case SP_MILES: {
+            int[] verts = getStartEndVerts();
+            printShortestDistSP(verts[0],verts[1]);
+            break; 
+          }
+        case SP_PRICE: {
+          int[] verts = getStartEndVerts();
+          printLowestPriceSP(verts[0],verts[1]);
           break;
-        case SP_PRICE:
-        case SP_STOPS:
+        }
+        case SP_STOPS: {
+          int[] verts = getStartEndVerts();
+          printFewestHopsSP(verts[0],verts[1]);
+          break;
+        }
         case ALL_TRIPS:
         case ADD_ROUTE:
         case REMOVE_ROUTE:
@@ -199,7 +209,7 @@ public class Assig5 {
     System.out.println(sb.toString());
   }
 
-  private void shortestDistSP() {
+  private int[] getStartEndVerts() {
     int start;
     int end;
     while(true) {
@@ -224,8 +234,7 @@ public class Assig5 {
     // convert to verts
     start += 1;
     end += 1;
-    printShortestDistSP(start, end);
-    
+    return new int[] {start, end};
   }
   
   private void printShortestDistSP(int start, int end) {
@@ -250,7 +259,53 @@ public class Assig5 {
         + graph.getName(end) + " is " + dist + "\nRoute (in reverse order):\n");
     System.out.println(sb.toString());
   }
-
+  
+  private void printLowestPriceSP(int start, int end) {
+    Edge[] edgeTo = new Edge[graph.getV()];
+    double[] distTo = new double[graph.getV()];
+    shortestPath(start, edgeTo, distTo, new EdgeWeight() { // pseudo-functional programming
+      @Override
+      public double weight(Edge e) {
+        return e.getCost();
+      }
+    });
+    
+    StringBuilder sb = new StringBuilder();
+    double cost = distTo[end-1];
+    int currVert = end;
+    while (currVert != start) {
+      sb.append(graph.getName(currVert) + " " + edgeTo[currVert-1].getCost() + " ");
+      currVert = edgeTo[currVert-1].getOtherPoint(currVert);
+    }
+    sb.append(graph.getName(start));
+    sb.insert(0,"Lowest Cost Route from " + graph.getName(start) + " to " 
+        + graph.getName(end) + " is " + cost + "\nRoute (in reverse order):\n");
+    System.out.println(sb.toString());
+  }
+ 
+  private void printFewestHopsSP(int start, int end) {
+    Edge[] edgeTo = new Edge[graph.getV()];
+    double[] distTo = new double[graph.getV()];
+    shortestPath(start, edgeTo, distTo, new EdgeWeight() { // pseudo-functional programming
+      @Override
+      public double weight(Edge e) {
+        return 1; // shortest hops = unweighted shortest path
+      }
+    });
+    
+    StringBuilder sb = new StringBuilder();
+    int dist = (int) distTo[end-1];
+    int currVert = end;
+    while (currVert != start) {
+      sb.append(graph.getName(currVert) + " ");
+      currVert = edgeTo[currVert-1].getOtherPoint(currVert);
+    }
+    sb.append(graph.getName(start));
+    sb.insert(0,"Fewest Stops from " + graph.getName(start) + " to " 
+        + graph.getName(end) + " is " + dist + "\nRoute (in reverse order):\n");
+    System.out.println(sb.toString());
+  }
+  
   private void shortestPath(int s, Edge[] edgeTo, double[] distTo, EdgeWeight ew) {
     IndexMinPQ<Double> pq = new IndexMinPQ<Double>(graph.getV());
     for (int v = 0; v < graph.getV(); v++)
