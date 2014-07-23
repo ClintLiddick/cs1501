@@ -1,6 +1,8 @@
 package assig5;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class UndirectedEdgeGraph {
   private int V;
@@ -37,7 +39,15 @@ public class UndirectedEdgeGraph {
   }
   
   public String getName(int v) {
-    return names.get(v-1);
+    if (v <= names.size())
+      return names.get(v-1);
+    else
+      return "BLAH NO NAME"; // DEBUG
+  }
+  
+  public int getNameVert(String name) {
+    return names.indexOf(name);
+      
   }
   
   public String toString() {
@@ -64,6 +74,15 @@ public class UndirectedEdgeGraph {
 
   public ArrayList<Edge> getAdj(int v) {
     return adj[v];
+  }
+  
+  public Set<Edge> edges() {
+    Set<Edge> set = new HashSet<Edge>();
+    for (int i=0; i<adj.length; i++) {
+      for (Edge e : adj[i])
+        set.add(e);
+    }
+    return set;
   }
   
 

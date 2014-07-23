@@ -37,4 +37,9 @@ public class Edge {
   public String toString() {
     return String.format("%d-%d %d %.2f",v,w,distance,cost);
   }
+  
+  @Override
+  public int hashCode() {
+    return Integer.parseInt(""+v+w+distance);
+  }
 }

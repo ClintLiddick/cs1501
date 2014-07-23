@@ -84,6 +84,8 @@ public class Assig5 {
           printDistMST();
           break;
         case SP_MILES:
+          shortestDistSP();
+          break;
         case SP_PRICE:
         case SP_STOPS:
         case ALL_TRIPS:
@@ -137,11 +139,11 @@ public class Assig5 {
     double[] distTo = new double[graph.getV()];
     boolean[] marked = new boolean[graph.getV()];
     Edge[] edgeTo = new Edge[graph.getV()];
-    
+
     for (int v = 0; v < graph.getV(); v++) {
       distTo[v] = Double.POSITIVE_INFINITY;
     }
-    
+
     for (int v = 1; v <= graph.getV(); v++) {      // run from each vertex to find
       if (!marked[v-1]) {
         prim(v,distTo,pq,marked, edgeTo);      // minimum spanning forest
@@ -149,7 +151,7 @@ public class Assig5 {
     }
     printMST(edgeTo, distTo);
   }
-  
+
   private void prim(int s, double[] distTo, IndexMinPQ<Double> pq, boolean[] marked, Edge[] edgeTo) {
     distTo[s-1] = 0.0;
     pq.insert(s, distTo[s-1]);
@@ -182,7 +184,7 @@ public class Assig5 {
       }
     }
   }
-  
+
   private void printMST(Edge[] edgeTo, double[] distTo) {
     StringBuilder sb = new StringBuilder();
     sb.append("Minimum Spanning Tree\n");
@@ -197,10 +199,150 @@ public class Assig5 {
     System.out.println(sb.toString());
   }
 
+  private void shortestDistSP() {
+    int start;
+    int end;
+    while(true) {
+      System.out.println("Enter starting city: ");
+      String startName = userInput.nextLine();
+      System.out.println("Enter ending city: ");
+      String endName = userInput.nextLine();
+
+      start = graph.getNameVert(startName);
+      end = graph.getNameVert(endName);
+      if (start == -1) {
+        System.out.println(startName + " not found");
+        continue;
+      }
+
+      if (end == -1) {
+        System.out.println(endName + " not found");
+        continue;
+      }
+      break; // valid input
+    }
+    // convert to verts
+    start += 1;
+    end += 1;
+    printShortestDistSP(start, end);
+    
+  }
+  
+  private void printShortestDistSP(int start, int end) {
+    Edge[] edgeTo = new Edge[graph.getV()];
+    double[] distTo = new double[graph.getV()];
+    shortestPath(start, edgeTo, distTo, new EdgeWeight() { // pseudo-functional programming
+      @Override
+      public double weight(Edge e) {
+        return e.getDistance();
+      }
+    });
+    
+    StringBuilder sb = new StringBuilder();
+    int dist = (int) distTo[end-1];
+    int currVert = end;
+    while (currVert != start) {
+      sb.append(graph.getName(currVert) + " " + edgeTo[currVert-1].getDistance() + " ");
+      currVert = edgeTo[currVert-1].getOtherPoint(currVert);
+    }
+    sb.append(graph.getName(start));
+    sb.insert(0,"Shortest Distance Route from " + graph.getName(start) + " to " 
+        + graph.getName(end) + " is " + dist + "\nRoute (in reverse order):\n");
+    System.out.println(sb.toString());
+  }
+
+  private void shortestPath(int s, Edge[] edgeTo, double[] distTo, EdgeWeight ew) {
+    IndexMinPQ<Double> pq = new IndexMinPQ<Double>(graph.getV());
+    for (int v = 0; v < graph.getV(); v++)
+      distTo[v] = Double.POSITIVE_INFINITY;
+    
+    distTo[s-1] = 0.0;
+
+    // relax vertices in order of distance from s
+    pq = new IndexMinPQ<Double>(graph.getV());
+    pq.insert(s, distTo[s-1]);
+    while (!pq.isEmpty()) {
+      int v = pq.delMin();
+      for (Edge e : graph.getAdj(v))
+        relax(e, v, distTo, edgeTo, pq, ew);
+    }
+    // check optimality conditions
+    assert check(s,distTo,edgeTo,ew);
+  }
+
+  // relax edge e and update pq if changed
+  private void relax(Edge e, int v, double[] distTo, Edge[] edgeTo, IndexMinPQ<Double> pq, EdgeWeight ew) {
+//    int v = e.getPoint();
+    int w = e.getOtherPoint(v);
+    if (distTo[w-1] > distTo[v-1] + ew.weight(e)) {
+      distTo[w-1] = distTo[v-1] + ew.weight(e);
+      edgeTo[w-1] = e;
+      if (pq.contains(w)) 
+        pq.change(w, distTo[w-1]);
+      else                
+        pq.insert(w, distTo[w-1]);
+    }
+  }
+
+  //check optimality conditions:
+  // (i) for all edges e:            distTo[e.to()] <= distTo[e.from()] + e.weight()
+  // (ii) for all edge e on the SPT: distTo[e.to()] == distTo[e.from()] + e.weight()
+  private boolean check(int s, double[] distTo, Edge[] edgeTo, EdgeWeight ew) {
+
+    // check that edge weights are nonnegative
+    for (Edge e : graph.edges()) {
+      if (ew.weight(e) < 0) {
+        System.err.println("negative edge weight detected");
+        return false;
+      }
+    }
+
+    // check that distTo[v] and edgeTo[v] are consistent
+    if (distTo[s-1] != 0.0 || edgeTo[s-1] != null) {
+      System.err.println("distTo[s] and edgeTo[s] inconsistent");
+      return false;
+    }
+    for (int v = 0; v < graph.getV(); v++) {
+      if (v == s-1) continue;
+      if (edgeTo[v] == null && distTo[v] != Double.POSITIVE_INFINITY) {
+        System.err.println("distTo[] and edgeTo[] inconsistent");
+        return false;
+      }
+    }
+
+    // check that all edges e = v->w satisfy distTo[w] <= distTo[v] + e.weight()
+    for (int v = 1; v <= graph.getV(); v++) {
+      for (Edge e : graph.getAdj(v)) {
+        int w = e.getOtherPoint(v);
+        if (distTo[v-1] + ew.weight(e) < distTo[w-1]) {
+          System.err.println("edge " + e + " not relaxed");
+          return false;
+        }
+      }
+    }
+
+    // check that all edges e = v->w on SPT satisfy distTo[w] == distTo[v] + e.weight()
+    for (int w = 1; w <= graph.getV(); w++) {
+      if (edgeTo[w-1] == null) continue;
+      Edge e = edgeTo[w-1];
+      int v = e.getPoint();
+      if (w != e.getOtherPoint(v)) return false;
+      if (distTo[v-1] + ew.weight(e) != distTo[w-1]) {
+        System.err.println("edge " + e + " on shortest path not tight");
+        return false;
+      }
+    }
+    return true;
+  }
+  
+  
+  
+  
   private void cleanUp() {
     userInput.close();
   }
+}
 
-
-
+interface EdgeWeight {
+  abstract public double weight(Edge e);
 }
