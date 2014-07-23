@@ -1,5 +1,7 @@
 package assig5;
 
+import java.util.Comparator;
+
 public class Edge {
   private final int v;
   private final int w;
@@ -41,5 +43,21 @@ public class Edge {
   @Override
   public int hashCode() {
     return Integer.parseInt(""+v+w+distance);
+  }
+}
+
+
+class EdgeDistanceComparator implements Comparator<Edge> {
+  @Override
+  public int compare(Edge o1, Edge o2) {
+    return Double.compare(o1.getDistance(), o2.getDistance());
+  }
+}
+
+class EdgeCostComparator implements Comparator<Edge> {
+  @Override
+  public int compare(Edge o1, Edge o2) {
+    // TODO Auto-generated method stub
+    return Double.compare(o1.getCost(), o2.getCost());
   }
 }

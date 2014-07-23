@@ -8,6 +8,7 @@ package assig5;
  *
  *********************************************************************/
 
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -16,13 +17,16 @@ public class IndexMinPQ<Key extends Comparable<Key>> implements Iterable<Integer
   private int[] pq;        // binary heap using 1-based indexing
   private int[] qp;        // inverse of pq - qp[pq[i]] = pq[qp[i]] = i
   private Key[] keys;      // keys[i] = priority of i
+  private Comparator comparator;
 
-  public IndexMinPQ(int NMAX) {
+  public IndexMinPQ(int NMAX, Comparator comparator) {
     keys = (Key[]) new Comparable[NMAX + 1];    // make this of length NMAX??
     pq   = new int[NMAX + 1];
     qp   = new int[NMAX + 1];                   // make this of length NMAX??
     for (int i = 0; i <= NMAX; i++) qp[i] = -1;
+    this.comparator = comparator;
   }
+  
 
   // is the priority queue empty?
   public boolean isEmpty() { return N == 0; }
@@ -163,7 +167,7 @@ public class IndexMinPQ<Key extends Comparable<Key>> implements Iterable<Integer
     // add all elements to copy of heap
     // takes linear time since already in heap order so no keys move
     public HeapIterator() {
-      copy = new IndexMinPQ<Key>(pq.length - 1);
+      copy = new IndexMinPQ<Key>(pq.length - 1,comparator);
       for (int i = 1; i <= N; i++)
         copy.insert(pq[i], keys[pq[i]]);
     }
@@ -177,12 +181,12 @@ public class IndexMinPQ<Key extends Comparable<Key>> implements Iterable<Integer
     }
   }
 
-
+/*
   public static void main(String[] args) {
     // insert a bunch of strings
     String[] strings = { "it", "was", "the", "best", "of", "times", "it", "was", "the", "worst" };
 
-    IndexMinPQ<String> pq = new IndexMinPQ<String>(strings.length);
+    IndexMinPQ<String> pq = new IndexMinPQ<String>(strings.length, comparator);
     for (int i = 0; i < strings.length; i++) {
       pq.insert(i, strings[i]);
     }
@@ -208,4 +212,5 @@ public class IndexMinPQ<Key extends Comparable<Key>> implements Iterable<Integer
     }
 
   }
+*/
 }
