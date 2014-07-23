@@ -4,12 +4,15 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.security.InvalidParameterException;
 import java.text.ParseException;
 import java.util.Scanner;
 
 public class Assig5 {
   private File dataFile;
   private UndirectedEdgeGraph graph;
+  private Scanner userInput = new Scanner(System.in);
+
   
   
   public static void main(String[] args) {
@@ -18,13 +21,15 @@ public class Assig5 {
   
   public void run() {
     getFile();
+    runUserActions();
+    
+    cleanUp();
   }
   
   private void getFile() {
-    Scanner sc = new Scanner(System.in);
     while (true) {
       System.out.print("Enter route data file: ");
-      String filepath = sc.nextLine();
+      String filepath = userInput.nextLine();
       this.dataFile = new File(filepath);
       try {
         loadGraph();
@@ -68,13 +73,65 @@ public class Assig5 {
     br.close();
   }
   
-  private void showMenu() {
-    // TODO
+  private void runUserActions() {
+    menuLoop:
+    while (true) {
+      Selection selection = getSelection();
+      switch (selection) {
+      case LIST_DIRECT:
+        showGraph();
+        break;
+      case DIST_MST:
+      case SP_MILES:
+      case SP_PRICE:
+      case SP_STOPS:
+      case ALL_TRIPS:
+      case ADD_ROUTE:
+      case REMOVE_ROUTE:
+      case QUIT:
+        break menuLoop;
+      }
+    }
   }
   
   private Selection getSelection() {
-    // TODO
-    return null;
+    while (true) {
+      showMenu();
+      String input = userInput.nextLine();
+      try {
+        int choice = Integer.parseInt(input);
+        if (choice > 9)
+          throw new InvalidParameterException();
+        
+        return Selection.values()[choice - 1];
+      } catch (NumberFormatException | InvalidParameterException ex) {
+        System.out.println("Invalid selection");
+      }
+    }
+  }
+  
+  private void showMenu() {
+    String menu = 
+        "--Select an option--\n"
+        + "1) List all direct flights\n"
+        + "2) Show minimum spanning tree\n"
+        + "3) Find shortest trip between two cities\n"
+        + "4) Find cheapest trip between two cities\n"
+        + "5) Find trip with fewest layovers between two cities\n"
+        + "6) Find all trips under specified price\n"
+        + "7) Add new route to schedule\n"
+        + "8) Remove route from schedule\n"
+        + "9) Quit\n"
+        + ": ";
+    System.out.print(menu);
+  }
+  
+  private void showGraph() {
+    System.out.println(graph);
+  }
+  
+  private void cleanUp() {
+    userInput.close();
   }
   
   

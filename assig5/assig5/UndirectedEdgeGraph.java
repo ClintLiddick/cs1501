@@ -39,15 +39,15 @@ public class UndirectedEdgeGraph {
   public String toString() {
     String NEWLINE = System.getProperty("line.separator");
     StringBuilder s = new StringBuilder();
-    s.append(V + " " + E + NEWLINE);
+    s.append("Route                         Dist   Cost" + NEWLINE);
     for (int v = 0; v < V; v++) {
-        s.append(v + ": ");
-        for (Edge e : adj[v]) {
-            s.append(e + "  ");
-        }
-        s.append(NEWLINE);
+      for (Edge e : adj[v]) {
+        s.append(String.format("%-30s%4d%7.1f\n",names.get(v-1) + " -- " + names.get(e.getOtherPoint(v)-1),
+            e.getDistance(),e.getCost()));
+      }
+      s.append(NEWLINE);
     }
     return s.toString();
-}
+  }
 
 }
