@@ -156,7 +156,7 @@ public class Assig5 {
   }
 
   private void printDistMST() {
-    IndexMinPQ<Double> pq = new IndexMinPQ<Double>(graph.getV(), new EdgeDistanceComparator());
+    IndexMinPQ<Double> pq = new IndexMinPQ<Double>(graph.getV());
     // arrays will be 0 indexed, so array[vertID - 1] to access
     double[] distTo = new double[graph.getV()];
     boolean[] marked = new boolean[graph.getV()];
@@ -438,9 +438,10 @@ private void addRoute() {
     br.close();
     
     int verts = Integer.parseInt(lines.get(0));
-    
+    System.out.println(lines.get(0) + " = verts: "+verts);
     int start = graph.getNameVert(startCity);
     int end = graph.getNameVert(endCity);
+    System.out.println("start:"+start+" end:"+end);//DEBUG
     
     // check if adding new cities
     if (start == -1) {

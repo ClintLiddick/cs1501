@@ -1,4 +1,4 @@
-9
+10
 Pittsburgh
 Erie
 Altoona
@@ -8,6 +8,7 @@ Philadelphia
 Scranton
 Reading
 Allentown
+Minesville
 1 2 127 200.00
 1 4 66 125.00
 1 5 205 125.00
@@ -20,3 +21,4 @@ Allentown
 6 9 62 150.00
 8 9 35 175.00
 1 9 600 660.0
+10 1 99 199.0

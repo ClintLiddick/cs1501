@@ -46,7 +46,10 @@ public class UndirectedEdgeGraph {
   }
   
   public int getNameVert(String name) {
-    return names.indexOf(name) + 1;
+    if (names.contains(name))
+      return names.indexOf(name) + 1;
+    else
+      return -1;
       
   }
   
@@ -54,8 +57,9 @@ public class UndirectedEdgeGraph {
     String NEWLINE = System.getProperty("line.separator");
     StringBuilder s = new StringBuilder();
     s.append("Route                         Dist   Cost" + NEWLINE);
-    for (int v = 0; v < V; v++) {
+    for (int v = 1; v <= V; v++) {
       for (Edge e : adj[v]) {
+        System.out.println("V:"+v); // DEBUG
         s.append(String.format("%-30s%4d%7.1f\n",names.get(v-1) + " -- " + names.get(e.getOtherPoint(v)-1),
             e.getDistance(),e.getCost()));
       }
