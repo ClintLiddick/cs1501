@@ -46,7 +46,7 @@ public class UndirectedEdgeGraph {
   }
   
   public int getNameVert(String name) {
-    return names.indexOf(name);
+    return names.indexOf(name) + 1;
       
   }
   
@@ -68,12 +68,20 @@ public class UndirectedEdgeGraph {
     return V;
   }
 
+  public void setV(int v) {
+    V = v;
+  }
+
   public int getE() {
     return E;
   }
-
+  
   public ArrayList<Edge> getAdj(int v) {
     return adj[v];
+  }
+  
+  public void addName(String name) {
+    names.add(name);
   }
   
   public Set<Edge> edges() {

@@ -2,16 +2,23 @@ package assig5;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.text.ParseException;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Scanner;
 
 public class Assig5 {
   private File dataFile;
   private UndirectedEdgeGraph graph;
   private Scanner userInput = new Scanner(System.in);
+  String NEWLINE = System.getProperty("line.separator");
+
 
 
   public static void main(String[] args) {
@@ -58,12 +65,15 @@ public class Assig5 {
         br.close();
         throw new ParseException("unable to parse edge",0);
       }
-      int v = Integer.parseInt(tokens[0]);
-      int w = Integer.parseInt(tokens[1]);
-      int dist = Integer.parseInt(tokens[2]);
-      double cost = Double.parseDouble(tokens[3]);
       try {
+        int v = Integer.parseInt(tokens[0]);
+        int w = Integer.parseInt(tokens[1]);
+        int dist = Integer.parseInt(tokens[2]);
+        double cost = Double.parseDouble(tokens[3]);
         graph.addEdge(new Edge(v,w,dist,cost));
+      } catch (NumberFormatException ex) {
+        br.close();
+        throw ex;
       } catch (RuntimeException ex) {
         br.close();
         throw new ParseException("edge/vertice mismatch",0);
@@ -100,6 +110,8 @@ public class Assig5 {
         }
         case ALL_TRIPS:
         case ADD_ROUTE:
+          addRoute();
+          break;
         case REMOVE_ROUTE:
         case QUIT:
           break menuLoop;
@@ -231,9 +243,6 @@ public class Assig5 {
       }
       break; // valid input
     }
-    // convert to verts
-    start += 1;
-    end += 1;
     return new int[] {start, end};
   }
   
@@ -390,7 +399,92 @@ public class Assig5 {
     return true;
   }
   
+private void addRoute() {
+  System.out.print("Starting city: ");
+  String startCity = userInput.nextLine();
+  System.out.print("Ending city: ");
+  String endCity = userInput.nextLine();
+  int dist = 0;
+  while (true) {
+    try {
+      System.out.print("Distance (miles): ");
+      dist = Integer.parseInt(userInput.nextLine());
+      break;
+    } catch (NumberFormatException ex) {
+      System.out.println("Invalid distance");
+    }
+  }
+  double cost = 0;
+  while (true) {
+    try {
+      System.out.print("Cost (100.00): ");
+      cost = Double.parseDouble(userInput.nextLine());
+      break;
+    } catch(NumberFormatException ex) {
+      System.out.println("Invalid cost");
+    }
+  }
   
+  BufferedReader br = null;
+  FileWriter fr = null;
+  try {
+    br = new BufferedReader(new FileReader(dataFile));
+    List<String> lines = new LinkedList<String>();
+    String line;
+    // buffer entire file
+    while ((line = br.readLine()) != null) {
+      lines.add(line);
+    }
+    br.close();
+    
+    int verts = Integer.parseInt(lines.get(0));
+    
+    int start = graph.getNameVert(startCity);
+    int end = graph.getNameVert(endCity);
+    
+    // check if adding new cities
+    if (start == -1) {
+      verts++;
+      start = verts;
+      graph.addName(startCity);
+      lines.add(verts, startCity);
+    }
+    
+    if (end == -1) {
+      verts++;
+      end = verts;
+      graph.addName(endCity);
+      lines.add(verts, endCity);
+    }
+    
+    lines.set(0, String.valueOf(verts));
+    lines.add(start + " " + end + " " + dist + " " + cost);
+    
+    fr = new FileWriter(dataFile);
+    Iterator<String> lineItr = lines.iterator();
+    fr.write(lineItr.next());
+    while (lineItr.hasNext()) {
+      fr.write(NEWLINE + lineItr.next());
+    }
+    fr.close();
+    try {
+      loadGraph();
+      System.out.println("Schedule updated");
+    } catch (ParseException e) {
+      System.out.println("datafile corrupted. sorry...");
+    }
+    
+  } catch (FileNotFoundException ex) {
+    System.out.println("Error opening file");
+  } catch (IOException ex) {
+    System.out.println("Error manipulating file");
+    try {
+      br.close();
+      fr.close();
+    } catch (IOException | NullPointerException ee) { }
+  }
+  
+}
   
   
   private void cleanUp() {
