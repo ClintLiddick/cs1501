@@ -13,7 +13,10 @@ public class UndirectedEdgeGraph {
     
     this.V = vertices;
     this.E = 0;
-    adj = (ArrayList<Edge>[]) new ArrayList[this.V];
+    adj = (ArrayList<Edge>[]) new ArrayList[this.V+1];
+    for (int i=0; i<this.V+1; i++) {
+      adj[i] = new ArrayList<Edge>();
+    }
     names = new ArrayList<String>();
   }
 
