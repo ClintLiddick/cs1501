@@ -36,6 +36,10 @@ public class UndirectedEdgeGraph {
     E++;
   }
   
+  public String getName(int v) {
+    return names.get(v-1);
+  }
+  
   public String toString() {
     String NEWLINE = System.getProperty("line.separator");
     StringBuilder s = new StringBuilder();
@@ -49,5 +53,18 @@ public class UndirectedEdgeGraph {
     }
     return s.toString();
   }
+
+  public int getV() {
+    return V;
+  }
+
+  public int getE() {
+    return E;
+  }
+
+  public ArrayList<Edge> getAdj(int v) {
+    return adj[v];
+  }
+  
 
 }
