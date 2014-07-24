@@ -144,7 +144,7 @@ public class Assig5 {
 
   private void showMenu() {
     String menu = 
-        "--Select an option--\n"
+        "\n--Select an option--\n"
             + "1) List all direct flights\n"
             + "2) Show minimum spanning tree\n"
             + "3) Find shortest trip between two cities\n"
@@ -263,17 +263,21 @@ public class Assig5 {
       }
     });
 
-    StringBuilder sb = new StringBuilder();
-    int dist = (int) distTo[end-1];
-    int currVert = end;
-    while (currVert != start) {
-      sb.append(graph.getName(currVert) + " " + edgeTo[currVert-1].getDistance() + " ");
-      currVert = edgeTo[currVert-1].getOtherPoint(currVert);
+    if (edgeTo[end-1] == null) { // no path found
+      System.out.println("No route exists between " + graph.getName(start) + " and " + graph.getName(end));
+    } else {
+      StringBuilder sb = new StringBuilder();
+      int dist = (int) distTo[end-1];
+      int currVert = end;
+      while (currVert != start) {
+        sb.append(graph.getName(currVert) + " " + edgeTo[currVert-1].getDistance() + " ");
+        currVert = edgeTo[currVert-1].getOtherPoint(currVert);
+      }
+      sb.append(graph.getName(start));
+      sb.insert(0,"Shortest Distance Route from " + graph.getName(start) + " to " 
+          + graph.getName(end) + " is " + dist + "\nRoute (in reverse order):\n");
+      System.out.println(sb.toString());
     }
-    sb.append(graph.getName(start));
-    sb.insert(0,"Shortest Distance Route from " + graph.getName(start) + " to " 
-        + graph.getName(end) + " is " + dist + "\nRoute (in reverse order):\n");
-    System.out.println(sb.toString());
   }
 
   private void printLowestPriceSP(int start, int end) {
@@ -286,17 +290,21 @@ public class Assig5 {
       }
     });
 
-    StringBuilder sb = new StringBuilder();
-    double cost = distTo[end-1];
-    int currVert = end;
-    while (currVert != start) {
-      sb.append(graph.getName(currVert) + " " + edgeTo[currVert-1].getCost() + " ");
-      currVert = edgeTo[currVert-1].getOtherPoint(currVert);
+    if (edgeTo[end-1] == null) { // no path found
+      System.out.println("No route exists between " + graph.getName(start) + " and " + graph.getName(end));
+    } else {
+      StringBuilder sb = new StringBuilder();
+      double cost = distTo[end-1];
+      int currVert = end;
+      while (currVert != start) {
+        sb.append(graph.getName(currVert) + " " + edgeTo[currVert-1].getCost() + " ");
+        currVert = edgeTo[currVert-1].getOtherPoint(currVert);
+      }
+      sb.append(graph.getName(start));
+      sb.insert(0,"Lowest Cost Route from " + graph.getName(start) + " to " 
+          + graph.getName(end) + " is " + cost + "\nRoute (in reverse order):\n");
+      System.out.println(sb.toString());
     }
-    sb.append(graph.getName(start));
-    sb.insert(0,"Lowest Cost Route from " + graph.getName(start) + " to " 
-        + graph.getName(end) + " is " + cost + "\nRoute (in reverse order):\n");
-    System.out.println(sb.toString());
   }
 
   private void printFewestHopsSP(int start, int end) {
@@ -308,18 +316,22 @@ public class Assig5 {
         return 1; // shortest hops = unweighted shortest path
       }
     });
-
-    StringBuilder sb = new StringBuilder();
-    int dist = (int) distTo[end-1];
-    int currVert = end;
-    while (currVert != start) {
-      sb.append(graph.getName(currVert) + " ");
-      currVert = edgeTo[currVert-1].getOtherPoint(currVert);
+    
+    if (edgeTo[end-1] == null) { // no path found
+      System.out.println("No route exists between " + graph.getName(start) + " and " + graph.getName(end));
+    } else {
+      StringBuilder sb = new StringBuilder();
+      int dist = (int) distTo[end-1];
+      int currVert = end;
+      while (currVert != start) {
+        sb.append(graph.getName(currVert) + " ");
+        currVert = edgeTo[currVert-1].getOtherPoint(currVert);
+      }
+      sb.append(graph.getName(start));
+      sb.insert(0,"Fewest Stops from " + graph.getName(start) + " to " 
+          + graph.getName(end) + " is " + dist + "\nRoute (in reverse order):\n");
+      System.out.println(sb.toString());
     }
-    sb.append(graph.getName(start));
-    sb.insert(0,"Fewest Stops from " + graph.getName(start) + " to " 
-        + graph.getName(end) + " is " + dist + "\nRoute (in reverse order):\n");
-    System.out.println(sb.toString());
   }
 
   private void shortestPath(int s, Edge[] edgeTo, double[] distTo, EdgeWeight ew) {

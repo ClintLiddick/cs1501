@@ -59,7 +59,6 @@ public class UndirectedEdgeGraph {
     s.append("Route                         Dist   Cost" + NEWLINE);
     for (int v = 1; v <= V; v++) {
       for (Edge e : adj[v]) {
-        System.out.println("V:"+v); // DEBUG
         s.append(String.format("%-30s%4d%7.1f\n",names.get(v-1) + " -- " + names.get(e.getOtherPoint(v)-1),
             e.getDistance(),e.getCost()));
       }
