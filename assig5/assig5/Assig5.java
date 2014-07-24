@@ -112,7 +112,11 @@ public class Assig5 {
         case ADD_ROUTE:
           addRoute();
           break;
-        case REMOVE_ROUTE:
+        case REMOVE_ROUTE: {
+          int[] verts = getStartEndVerts();
+          removeRoute(verts[0],verts[1]);
+          break;
+        }
         case QUIT:
           break menuLoop;
         }
@@ -400,9 +404,9 @@ public class Assig5 {
   }
   
 private void addRoute() {
-  System.out.print("Starting city: ");
+  System.out.println("Starting city: ");
   String startCity = userInput.nextLine();
-  System.out.print("Ending city: ");
+  System.out.println("Ending city: ");
   String endCity = userInput.nextLine();
   int dist = 0;
   while (true) {
@@ -438,10 +442,8 @@ private void addRoute() {
     br.close();
     
     int verts = Integer.parseInt(lines.get(0));
-    System.out.println(lines.get(0) + " = verts: "+verts);
     int start = graph.getNameVert(startCity);
     int end = graph.getNameVert(endCity);
-    System.out.println("start:"+start+" end:"+end);//DEBUG
     
     // check if adding new cities
     if (start == -1) {
@@ -486,7 +488,59 @@ private void addRoute() {
   }
   
 }
+ 
+
+private void removeRoute(int start, int end) {
   
+  BufferedReader br = null;
+  FileWriter fr = null;
+  try {
+    br = new BufferedReader(new FileReader(dataFile));
+    List<String> lines = new LinkedList<String>();
+    String line;
+    // buffer entire file
+    while ((line = br.readLine()) != null) {
+      lines.add(line);
+    }
+    br.close();
+    
+    fr = new FileWriter(dataFile);
+    Iterator<String> lineItr = lines.iterator();
+    // go past the city list
+    int verts = Integer.parseInt(lines.get(0));
+    fr.write(lineItr.next());
+    for (int i=0; i<verts; i++)
+      fr.write(NEWLINE + lineItr.next()); // PARTIAL DEBUG
+    
+    while (lineItr.hasNext()) {
+      line = lineItr.next();
+      String[] tokens = line.split("\\s");
+      int first = Integer.parseInt(tokens[0]);
+      int second = Integer.parseInt(tokens[1]);
+      if ((start == first && end == second) || (start == second && end == first))
+        continue; // don't write line
+      else
+        fr.write(NEWLINE + line);
+    }
+    fr.close();
+    try {
+      loadGraph();
+      System.out.println("Schedule updated");
+    } catch (ParseException e) {
+      System.out.println("datafile corrupted. sorry...");
+    }
+    
+  } catch (FileNotFoundException ex) {
+    System.out.println("Error opening file");
+  } catch (IOException ex) {
+    System.out.println("Error manipulating file");
+    try {
+      br.close();
+      fr.close();
+    } catch (IOException | NullPointerException ee) { }
+  }
+  
+}
   
   private void cleanUp() {
     userInput.close();
