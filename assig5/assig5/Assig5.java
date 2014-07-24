@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -94,10 +95,10 @@ public class Assig5 {
           printDistMST();
           break;
         case SP_MILES: {
-            int[] verts = getStartEndVerts();
-            printShortestDistSP(verts[0],verts[1]);
-            break; 
-          }
+          int[] verts = getStartEndVerts();
+          printShortestDistSP(verts[0],verts[1]);
+          break; 
+        }
         case SP_PRICE: {
           int[] verts = getStartEndVerts();
           printLowestPriceSP(verts[0],verts[1]);
@@ -109,6 +110,8 @@ public class Assig5 {
           break;
         }
         case ALL_TRIPS:
+          printAllTripsUnderPrice();
+          break;
         case ADD_ROUTE:
           addRoute();
           break;
@@ -249,7 +252,7 @@ public class Assig5 {
     }
     return new int[] {start, end};
   }
-  
+
   private void printShortestDistSP(int start, int end) {
     Edge[] edgeTo = new Edge[graph.getV()];
     double[] distTo = new double[graph.getV()];
@@ -259,7 +262,7 @@ public class Assig5 {
         return e.getDistance();
       }
     });
-    
+
     StringBuilder sb = new StringBuilder();
     int dist = (int) distTo[end-1];
     int currVert = end;
@@ -272,7 +275,7 @@ public class Assig5 {
         + graph.getName(end) + " is " + dist + "\nRoute (in reverse order):\n");
     System.out.println(sb.toString());
   }
-  
+
   private void printLowestPriceSP(int start, int end) {
     Edge[] edgeTo = new Edge[graph.getV()];
     double[] distTo = new double[graph.getV()];
@@ -282,7 +285,7 @@ public class Assig5 {
         return e.getCost();
       }
     });
-    
+
     StringBuilder sb = new StringBuilder();
     double cost = distTo[end-1];
     int currVert = end;
@@ -295,7 +298,7 @@ public class Assig5 {
         + graph.getName(end) + " is " + cost + "\nRoute (in reverse order):\n");
     System.out.println(sb.toString());
   }
- 
+
   private void printFewestHopsSP(int start, int end) {
     Edge[] edgeTo = new Edge[graph.getV()];
     double[] distTo = new double[graph.getV()];
@@ -305,7 +308,7 @@ public class Assig5 {
         return 1; // shortest hops = unweighted shortest path
       }
     });
-    
+
     StringBuilder sb = new StringBuilder();
     int dist = (int) distTo[end-1];
     int currVert = end;
@@ -318,12 +321,12 @@ public class Assig5 {
         + graph.getName(end) + " is " + dist + "\nRoute (in reverse order):\n");
     System.out.println(sb.toString());
   }
-  
+
   private void shortestPath(int s, Edge[] edgeTo, double[] distTo, EdgeWeight ew) {
     IndexMinPQ<Double> pq = new IndexMinPQ<Double>(graph.getV());
     for (int v = 0; v < graph.getV(); v++)
       distTo[v] = Double.POSITIVE_INFINITY;
-    
+
     distTo[s-1] = 0.0;
 
     // relax vertices in order of distance from s
@@ -340,7 +343,7 @@ public class Assig5 {
 
   // relax edge e and update pq if changed
   private void relax(Edge e, int v, double[] distTo, Edge[] edgeTo, IndexMinPQ<Double> pq, EdgeWeight ew) {
-//    int v = e.getPoint();
+    //    int v = e.getPoint();
     int w = e.getOtherPoint(v);
     if (distTo[w-1] > distTo[v-1] + ew.weight(e)) {
       distTo[w-1] = distTo[v-1] + ew.weight(e);
@@ -402,146 +405,203 @@ public class Assig5 {
     }
     return true;
   }
-  
-private void addRoute() {
-  System.out.println("Starting city: ");
-  String startCity = userInput.nextLine();
-  System.out.println("Ending city: ");
-  String endCity = userInput.nextLine();
-  int dist = 0;
-  while (true) {
-    try {
-      System.out.print("Distance (miles): ");
-      dist = Integer.parseInt(userInput.nextLine());
-      break;
-    } catch (NumberFormatException ex) {
-      System.out.println("Invalid distance");
-    }
-  }
-  double cost = 0;
-  while (true) {
-    try {
-      System.out.print("Cost (100.00): ");
-      cost = Double.parseDouble(userInput.nextLine());
-      break;
-    } catch(NumberFormatException ex) {
-      System.out.println("Invalid cost");
-    }
-  }
-  
-  BufferedReader br = null;
-  FileWriter fr = null;
-  try {
-    br = new BufferedReader(new FileReader(dataFile));
-    List<String> lines = new LinkedList<String>();
-    String line;
-    // buffer entire file
-    while ((line = br.readLine()) != null) {
-      lines.add(line);
-    }
-    br.close();
-    
-    int verts = Integer.parseInt(lines.get(0));
-    int start = graph.getNameVert(startCity);
-    int end = graph.getNameVert(endCity);
-    
-    // check if adding new cities
-    if (start == -1) {
-      verts++;
-      start = verts;
-      graph.addName(startCity);
-      lines.add(verts, startCity);
-    }
-    
-    if (end == -1) {
-      verts++;
-      end = verts;
-      graph.addName(endCity);
-      lines.add(verts, endCity);
-    }
-    
-    lines.set(0, String.valueOf(verts));
-    lines.add(start + " " + end + " " + dist + " " + cost);
-    
-    fr = new FileWriter(dataFile);
-    Iterator<String> lineItr = lines.iterator();
-    fr.write(lineItr.next());
-    while (lineItr.hasNext()) {
-      fr.write(NEWLINE + lineItr.next());
-    }
-    fr.close();
-    try {
-      loadGraph();
-      System.out.println("Schedule updated");
-    } catch (ParseException e) {
-      System.out.println("datafile corrupted. sorry...");
-    }
-    
-  } catch (FileNotFoundException ex) {
-    System.out.println("Error opening file");
-  } catch (IOException ex) {
-    System.out.println("Error manipulating file");
-    try {
-      br.close();
-      fr.close();
-    } catch (IOException | NullPointerException ee) { }
-  }
-  
-}
- 
 
-private void removeRoute(int start, int end) {
-  
-  BufferedReader br = null;
-  FileWriter fr = null;
-  try {
-    br = new BufferedReader(new FileReader(dataFile));
-    List<String> lines = new LinkedList<String>();
-    String line;
-    // buffer entire file
-    while ((line = br.readLine()) != null) {
-      lines.add(line);
+  private void addRoute() {
+    System.out.println("Starting city: ");
+    String startCity = userInput.nextLine();
+    System.out.println("Ending city: ");
+    String endCity = userInput.nextLine();
+    int dist = 0;
+    while (true) {
+      try {
+        System.out.print("Distance (miles): ");
+        dist = Integer.parseInt(userInput.nextLine());
+        break;
+      } catch (NumberFormatException ex) {
+        System.out.println("Invalid distance");
+      }
     }
-    br.close();
-    
-    fr = new FileWriter(dataFile);
-    Iterator<String> lineItr = lines.iterator();
-    // go past the city list
-    int verts = Integer.parseInt(lines.get(0));
-    fr.write(lineItr.next());
-    for (int i=0; i<verts; i++)
-      fr.write(NEWLINE + lineItr.next()); // PARTIAL DEBUG
-    
-    while (lineItr.hasNext()) {
-      line = lineItr.next();
-      String[] tokens = line.split("\\s");
-      int first = Integer.parseInt(tokens[0]);
-      int second = Integer.parseInt(tokens[1]);
-      if ((start == first && end == second) || (start == second && end == first))
-        continue; // don't write line
-      else
-        fr.write(NEWLINE + line);
+    double cost = 0;
+    while (true) {
+      try {
+        System.out.print("Cost (100.00): ");
+        cost = Double.parseDouble(userInput.nextLine());
+        break;
+      } catch(NumberFormatException ex) {
+        System.out.println("Invalid cost");
+      }
     }
-    fr.close();
+
+    BufferedReader br = null;
+    FileWriter fr = null;
     try {
-      loadGraph();
-      System.out.println("Schedule updated");
-    } catch (ParseException e) {
-      System.out.println("datafile corrupted. sorry...");
-    }
-    
-  } catch (FileNotFoundException ex) {
-    System.out.println("Error opening file");
-  } catch (IOException ex) {
-    System.out.println("Error manipulating file");
-    try {
+      br = new BufferedReader(new FileReader(dataFile));
+      List<String> lines = new LinkedList<String>();
+      String line;
+      // buffer entire file
+      while ((line = br.readLine()) != null) {
+        lines.add(line);
+      }
       br.close();
+
+      int verts = Integer.parseInt(lines.get(0));
+      int start = graph.getNameVert(startCity);
+      int end = graph.getNameVert(endCity);
+
+      // check if adding new cities
+      if (start == -1) {
+        verts++;
+        start = verts;
+        graph.addName(startCity);
+        lines.add(verts, startCity);
+      }
+
+      if (end == -1) {
+        verts++;
+        end = verts;
+        graph.addName(endCity);
+        lines.add(verts, endCity);
+      }
+
+      lines.set(0, String.valueOf(verts));
+      lines.add(start + " " + end + " " + dist + " " + cost);
+
+      fr = new FileWriter(dataFile);
+      Iterator<String> lineItr = lines.iterator();
+      fr.write(lineItr.next());
+      while (lineItr.hasNext()) {
+        fr.write(NEWLINE + lineItr.next());
+      }
       fr.close();
-    } catch (IOException | NullPointerException ee) { }
+      try {
+        loadGraph();
+        System.out.println("Schedule updated");
+      } catch (ParseException e) {
+        System.out.println("datafile corrupted. sorry...");
+      }
+
+    } catch (FileNotFoundException ex) {
+      System.out.println("Error opening file");
+    } catch (IOException ex) {
+      System.out.println("Error manipulating file");
+      try {
+        br.close();
+        fr.close();
+      } catch (IOException | NullPointerException ee) { }
+    }
+
   }
-  
-}
-  
+
+  private void printAllTripsUnderPrice() {
+    double priceLimit;
+    while (true) {
+      System.out.print("Enter max price: ");
+      try {
+        priceLimit = Double.parseDouble(userInput.nextLine());
+        break;
+      } catch(NumberFormatException ex) {
+        System.out.println("Invalid cost");
+      }
+    }
+    StringBuilder sb = new StringBuilder();
+    sb.append("All Routes " + priceLimit + " Or Less\n");
+
+    // loop for each starting vertice
+    for (int vert=1; vert<=graph.getV(); vert++) {
+      findRoutesUnderLimit(vert,priceLimit,sb);
+    }
+    System.out.println(sb.toString());
+  }
+
+  private void findRoutesUnderLimit(int vert, double priceLimit, StringBuilder sb) {
+    boolean[] marked = new boolean[graph.getV() + 1];
+    marked[vert] = true;
+    Edge[] edgeTo = new Edge[graph.getV() + 1];
+    routesUnderLimitRec(vert, edgeTo, 0, priceLimit, sb, marked);
+    marked[vert] = false;
+  }
+
+  private void routesUnderLimitRec(int vert,Edge[] edgeTo, double price, 
+      double priceLimit, StringBuilder sb, boolean[] marked) {
+    ArrayList<Edge> adj = graph.getAdj(vert);
+    for (Edge e : adj) {
+      int w = e.getOtherPoint(vert);
+      if (!marked[w] && price + e.getCost() <= priceLimit) {
+        edgeTo[w] = e;
+        marked[w] = true;
+        appendRouteString(sb,w,edgeTo,price+e.getCost());
+        routesUnderLimitRec(w, edgeTo, price+e.getCost(), priceLimit, sb, marked);
+        edgeTo[w] = null;
+        marked[w] = false;
+      }
+    }
+  }
+
+  private void appendRouteString(StringBuilder sb, int end, Edge[] edgeTo, double price) {
+    sb.append("Cost: " + price + " Route: ");
+    int vert = end;
+    while (edgeTo[vert] != null) {
+      String name = graph.getName(vert);
+      double cost = edgeTo[vert].getCost();
+      sb.append(name + " " + cost + " ");
+      vert = edgeTo[vert].getOtherPoint(vert);
+    }
+    String firstName = graph.getName(vert);
+    sb.append(firstName + NEWLINE + NEWLINE);
+  }
+
+  private void removeRoute(int start, int end) {
+
+    BufferedReader br = null;
+    FileWriter fr = null;
+    try {
+      br = new BufferedReader(new FileReader(dataFile));
+      List<String> lines = new LinkedList<String>();
+      String line;
+      // buffer entire file
+      while ((line = br.readLine()) != null) {
+        lines.add(line);
+      }
+      br.close();
+
+      fr = new FileWriter(dataFile);
+      Iterator<String> lineItr = lines.iterator();
+      // go past the city list
+      int verts = Integer.parseInt(lines.get(0));
+      fr.write(lineItr.next());
+      for (int i=0; i<verts; i++)
+        fr.write(NEWLINE + lineItr.next());
+
+      while (lineItr.hasNext()) {
+        line = lineItr.next();
+        String[] tokens = line.split("\\s");
+        int first = Integer.parseInt(tokens[0]);
+        int second = Integer.parseInt(tokens[1]);
+        if ((start == first && end == second) || (start == second && end == first))
+          continue; // don't write line
+        else
+          fr.write(NEWLINE + line);
+      }
+      fr.close();
+      try {
+        loadGraph();
+        System.out.println("Schedule updated");
+      } catch (ParseException e) {
+        System.out.println("datafile corrupted. sorry...");
+      }
+
+    } catch (FileNotFoundException ex) {
+      System.out.println("Error opening file");
+    } catch (IOException ex) {
+      System.out.println("Error manipulating file");
+      try {
+        br.close();
+        fr.close();
+      } catch (IOException | NullPointerException ee) { }
+    }
+
+  }
+
   private void cleanUp() {
     userInput.close();
   }
