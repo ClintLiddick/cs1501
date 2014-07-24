@@ -18,9 +18,7 @@ public class Assig5 {
   private File dataFile;
   private UndirectedEdgeGraph graph;
   private Scanner userInput = new Scanner(System.in);
-  String NEWLINE = System.getProperty("line.separator");
-
-
+  private static final String NEWLINE = System.getProperty("line.separator");
 
   public static void main(String[] args) {
     new Assig5().run();
@@ -29,10 +27,11 @@ public class Assig5 {
   public void run() {
     getFile();
     runUserActions();
-
     cleanUp();
+    System.out.println("Goodbye!");
   }
 
+  // read open data file from user-specified path
   private void getFile() {
     while (true) {
       System.out.print("Enter route data file: ");
@@ -51,14 +50,18 @@ public class Assig5 {
     }
   }
 
+  // parse graph from file
   private void loadGraph() throws IOException, ParseException {
     BufferedReader br = new BufferedReader(new FileReader(dataFile));
+    // read # verts
     int V = Integer.parseInt(br.readLine());
     graph = new UndirectedEdgeGraph(V);
+    // read verts names
     for (int i=0; i<V; i++) {
       graph.addVertice(br.readLine());
     }
 
+    // parse and add edges
     String line;
     while ((line = br.readLine()) != null) {
       String[] tokens = line.split("\\s");
@@ -83,9 +86,11 @@ public class Assig5 {
     br.close();
   }
 
+  // action switch
   private void runUserActions() {
     menuLoop:
       while (true) {
+        // get user's selected action
         Selection selection = getSelection();
         switch (selection) {
         case LIST_DIRECT:
@@ -109,7 +114,7 @@ public class Assig5 {
           printFewestHopsSP(verts[0],verts[1]);
           break;
         }
-        case ALL_TRIPS:
+        case ALL_TRIPS_UNDER:
           printAllTripsUnderPrice();
           break;
         case ADD_ROUTE:
@@ -126,6 +131,7 @@ public class Assig5 {
       }
   }
 
+  // parse user selection
   private Selection getSelection() {
     while (true) {
       showMenu();
@@ -136,12 +142,14 @@ public class Assig5 {
           throw new InvalidParameterException();
 
         return Selection.values()[choice - 1];
+        
       } catch (NumberFormatException | InvalidParameterException ex) {
         System.out.println("Invalid selection");
       }
     }
   }
 
+  // print console menu
   private void showMenu() {
     String menu = 
         "\n--Select an option--\n"
@@ -158,29 +166,33 @@ public class Assig5 {
     System.out.print(menu);
   }
 
+  // print string representation of entire graph
   private void showGraph() {
     System.out.println(graph);
   }
 
+  // print Minimum Spanning Tree using distance as weight
   private void printDistMST() {
     IndexMinPQ<Double> pq = new IndexMinPQ<Double>(graph.getV());
-    // arrays will be 0 indexed, so array[vertID - 1] to access
+    /***** arrays will be 0 indexed, so use array[vertID - 1] to access vert information *****/
     double[] distTo = new double[graph.getV()];
     boolean[] marked = new boolean[graph.getV()];
-    Edge[] edgeTo = new Edge[graph.getV()];
-
-    for (int v = 0; v < graph.getV(); v++) {
-      distTo[v] = Double.POSITIVE_INFINITY;
-    }
-
+    // run Eager Prim algo for each potential starting vert
+    // to determine "forest" of MSTs
     for (int v = 1; v <= graph.getV(); v++) {      // run from each vertex to find
+      Edge[] edgeTo = new Edge[graph.getV()];
+
+      for (int i = 0; i < graph.getV(); i++) {
+        distTo[i] = Double.POSITIVE_INFINITY;
+      }
       if (!marked[v-1]) {
         prim(v,distTo,pq,marked, edgeTo);      // minimum spanning forest
+        printMST(edgeTo, distTo, v);
       }
     }
-    printMST(edgeTo, distTo);
   }
 
+  // Eager Prim algo for MST
   private void prim(int s, double[] distTo, IndexMinPQ<Double> pq, boolean[] marked, Edge[] edgeTo) {
     distTo[s-1] = 0.0;
     pq.insert(s, distTo[s-1]);
@@ -214,20 +226,24 @@ public class Assig5 {
     }
   }
 
-  private void printMST(Edge[] edgeTo, double[] distTo) {
+  // pretty-print MST
+  private void printMST(Edge[] edgeTo, double[] distTo, int v) {
     StringBuilder sb = new StringBuilder();
-    sb.append("Minimum Spanning Tree\n");
-    sb.append("Starting from: " + graph.getName(1) + "\n");
+    
+    sb.append("Minimum Spanning Tree Starting from: " + graph.getName(v) + "\n");
     for (int i=2; i<=graph.getV(); i++) {
-      String end = graph.getName(i);
-      String start = graph.getName(edgeTo[i-1].getOtherPoint(i));
-      double dist = distTo[i-1]; // also == e.getDistance();
-      assert (edgeTo[i-1].getDistance() == dist);
-      sb.append(start + "--" + end + " : " + dist + "\n");
+      if (edgeTo[i-1] != null) {
+        String end = graph.getName(i);
+        String start = graph.getName(edgeTo[i-1].getOtherPoint(i));
+        double dist = distTo[i-1]; // also == e.getDistance();
+        assert (edgeTo[i-1].getDistance() == dist);
+        sb.append(start + "--" + end + " : " + dist + "\n");
+      }
     }
     System.out.println(sb.toString());
   }
 
+  // ask user for starting and ending cities, return as int vertIDs tuple
   private int[] getStartEndVerts() {
     int start;
     int end;
@@ -239,12 +255,13 @@ public class Assig5 {
 
       start = graph.getNameVert(startName);
       end = graph.getNameVert(endName);
-      if (start == -1) {
+      
+      if (start == -1) { // start not found
         System.out.println(startName + " not found");
         continue;
       }
 
-      if (end == -1) {
+      if (end == -1) { // end not found
         System.out.println(endName + " not found");
         continue;
       }
@@ -253,10 +270,13 @@ public class Assig5 {
     return new int[] {start, end};
   }
 
+  // print Shortest Path using distance as weight
   private void printShortestDistSP(int start, int end) {
     Edge[] edgeTo = new Edge[graph.getV()];
     double[] distTo = new double[graph.getV()];
-    shortestPath(start, edgeTo, distTo, new EdgeWeight() { // pseudo-functional programming
+    // Dijkstras's algo for weighted shortest path
+    shortestPath(start, edgeTo, distTo, new EdgeWeight() { // pseudo-functional programming, 
+                                                           // passing function wrapped in anonymous class
       @Override
       public double weight(Edge e) {
         return e.getDistance();
@@ -265,10 +285,11 @@ public class Assig5 {
 
     if (edgeTo[end-1] == null) { // no path found
       System.out.println("No route exists between " + graph.getName(start) + " and " + graph.getName(end));
-    } else {
+    } else { // path found
       StringBuilder sb = new StringBuilder();
       int dist = (int) distTo[end-1];
       int currVert = end;
+      // build pretty string from results of algo
       while (currVert != start) {
         sb.append(graph.getName(currVert) + " " + edgeTo[currVert-1].getDistance() + " ");
         currVert = edgeTo[currVert-1].getOtherPoint(currVert);
@@ -280,10 +301,12 @@ public class Assig5 {
     }
   }
 
+  // print shortest path using price as weight
   private void printLowestPriceSP(int start, int end) {
     Edge[] edgeTo = new Edge[graph.getV()];
     double[] distTo = new double[graph.getV()];
     shortestPath(start, edgeTo, distTo, new EdgeWeight() { // pseudo-functional programming
+                                                           // passing function wrapped in anonymous class
       @Override
       public double weight(Edge e) {
         return e.getCost();
@@ -292,10 +315,11 @@ public class Assig5 {
 
     if (edgeTo[end-1] == null) { // no path found
       System.out.println("No route exists between " + graph.getName(start) + " and " + graph.getName(end));
-    } else {
+    } else { // path found
       StringBuilder sb = new StringBuilder();
       double cost = distTo[end-1];
       int currVert = end;
+      // build pretty string from results
       while (currVert != start) {
         sb.append(graph.getName(currVert) + " " + edgeTo[currVert-1].getCost() + " ");
         currVert = edgeTo[currVert-1].getOtherPoint(currVert);
@@ -307,10 +331,12 @@ public class Assig5 {
     }
   }
 
+  // print shortest path using unweighted (equal-weighted) edges
   private void printFewestHopsSP(int start, int end) {
     Edge[] edgeTo = new Edge[graph.getV()];
     double[] distTo = new double[graph.getV()];
     shortestPath(start, edgeTo, distTo, new EdgeWeight() { // pseudo-functional programming
+                                                           // passing function wrapped in anonymous class
       @Override
       public double weight(Edge e) {
         return 1; // shortest hops = unweighted shortest path
@@ -319,10 +345,11 @@ public class Assig5 {
     
     if (edgeTo[end-1] == null) { // no path found
       System.out.println("No route exists between " + graph.getName(start) + " and " + graph.getName(end));
-    } else {
+    } else { // path found
       StringBuilder sb = new StringBuilder();
       int dist = (int) distTo[end-1];
       int currVert = end;
+      // build pretty string from results
       while (currVert != start) {
         sb.append(graph.getName(currVert) + " ");
         currVert = edgeTo[currVert-1].getOtherPoint(currVert);
@@ -334,6 +361,7 @@ public class Assig5 {
     }
   }
 
+  // Dijkstra's algorithm for weighted shortest path
   private void shortestPath(int s, Edge[] edgeTo, double[] distTo, EdgeWeight ew) {
     IndexMinPQ<Double> pq = new IndexMinPQ<Double>(graph.getV());
     for (int v = 0; v < graph.getV(); v++)
@@ -418,6 +446,7 @@ public class Assig5 {
     return true;
   }
 
+  // user-specified route (allows new cities)
   private void addRoute() {
     System.out.println("Starting city: ");
     String startCity = userInput.nextLine();
@@ -475,9 +504,12 @@ public class Assig5 {
         lines.add(verts, endCity);
       }
 
+      // update number of verts
       lines.set(0, String.valueOf(verts));
+      // add new edge line
       lines.add(start + " " + end + " " + dist + " " + cost);
 
+      // write all lines back to file
       fr = new FileWriter(dataFile);
       Iterator<String> lineItr = lines.iterator();
       fr.write(lineItr.next());
@@ -504,8 +536,11 @@ public class Assig5 {
 
   }
 
+  // finds all trips under specified price using
+  // a branch and prune combination method
   private void printAllTripsUnderPrice() {
     double priceLimit;
+    // get user input
     while (true) {
       System.out.print("Enter max price: ");
       try {
@@ -522,33 +557,44 @@ public class Assig5 {
     for (int vert=1; vert<=graph.getV(); vert++) {
       findRoutesUnderLimit(vert,priceLimit,sb);
     }
+    // print generated routes
     System.out.println(sb.toString());
   }
 
+  // setup for recursive calls
   private void findRoutesUnderLimit(int vert, double priceLimit, StringBuilder sb) {
-    boolean[] marked = new boolean[graph.getV() + 1];
-    marked[vert] = true;
+    boolean[] alreadyUsed = new boolean[graph.getV() + 1];
+    alreadyUsed[vert] = true;
     Edge[] edgeTo = new Edge[graph.getV() + 1];
-    routesUnderLimitRec(vert, edgeTo, 0, priceLimit, sb, marked);
-    marked[vert] = false;
+    // begin recursion
+    routesUnderLimitRec(vert, edgeTo, 0, priceLimit, sb, alreadyUsed);
+    alreadyUsed[vert] = false;
   }
 
+  // recursive pruning method for finding combinations of edges
   private void routesUnderLimitRec(int vert,Edge[] edgeTo, double price, 
-      double priceLimit, StringBuilder sb, boolean[] marked) {
+      double priceLimit, StringBuilder sb, boolean[] alreadyUsed) {
+    // get list of edges
     ArrayList<Edge> adj = graph.getAdj(vert);
+    // for each edge, add to potential route if under price and recurse
     for (Edge e : adj) {
-      int w = e.getOtherPoint(vert);
-      if (!marked[w] && price + e.getCost() <= priceLimit) {
+      int w = e.getOtherPoint(vert); // get opposite side of edge
+      if (!alreadyUsed[w] && price + e.getCost() <= priceLimit) { // if valid
+        // add edge
         edgeTo[w] = e;
-        marked[w] = true;
+        alreadyUsed[w] = true;
+        // add to list of valid routes (StringBuilder)
         appendRouteString(sb,w,edgeTo,price+e.getCost());
-        routesUnderLimitRec(w, edgeTo, price+e.getCost(), priceLimit, sb, marked);
+        // recurse
+        routesUnderLimitRec(w, edgeTo, price+e.getCost(), priceLimit, sb, alreadyUsed);
+        // remove edge
         edgeTo[w] = null;
-        marked[w] = false;
+        alreadyUsed[w] = false;
       }
     }
   }
 
+  // formats and appends a new route to StringBuilder in reverse order
   private void appendRouteString(StringBuilder sb, int end, Edge[] edgeTo, double price) {
     sb.append("Cost: " + price + " Route: ");
     int vert = end;
@@ -562,6 +608,7 @@ public class Assig5 {
     sb.append(firstName + NEWLINE + NEWLINE);
   }
 
+  // removes edge specified by vertices
   private void removeRoute(int start, int end) {
 
     BufferedReader br = null;
@@ -578,7 +625,7 @@ public class Assig5 {
 
       fr = new FileWriter(dataFile);
       Iterator<String> lineItr = lines.iterator();
-      // go past the city list
+      // go past the city list, just write back to file
       int verts = Integer.parseInt(lines.get(0));
       fr.write(lineItr.next());
       for (int i=0; i<verts; i++)
@@ -589,6 +636,8 @@ public class Assig5 {
         String[] tokens = line.split("\\s");
         int first = Integer.parseInt(tokens[0]);
         int second = Integer.parseInt(tokens[1]);
+        // write remaining lines back to file
+        // if not the edge we want to remove
         if ((start == first && end == second) || (start == second && end == first))
           continue; // don't write line
         else
@@ -596,6 +645,7 @@ public class Assig5 {
       }
       fr.close();
       try {
+        // reload graph in memory
         loadGraph();
         System.out.println("Schedule updated");
       } catch (ParseException e) {
@@ -619,6 +669,7 @@ public class Assig5 {
   }
 }
 
+// used to pas to Dijkstra's algo to determine weight of edge
 interface EdgeWeight {
   abstract public double weight(Edge e);
 }

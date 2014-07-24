@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+// vertices are 1-indexed
 public class UndirectedEdgeGraph {
   private int V;
   private int E;
@@ -39,10 +40,8 @@ public class UndirectedEdgeGraph {
   }
   
   public String getName(int v) {
-    if (v <= names.size())
-      return names.get(v-1);
-    else
-      return "BLAH NO NAME"; // DEBUG
+    assert (v <= names.size());  
+    return names.get(v-1);
   }
   
   public int getNameVert(String name) {
@@ -87,6 +86,7 @@ public class UndirectedEdgeGraph {
     names.add(name);
   }
   
+  // returns unique, iterable set of edges
   public Set<Edge> edges() {
     Set<Edge> set = new HashSet<Edge>();
     for (int i=0; i<adj.length; i++) {
